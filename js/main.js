@@ -5,11 +5,28 @@
 
 class SiteController {
     constructor() {
+        this._initParallax();
         this._initNav();
         this._initBio();
         this._initForms();
         this._initVisualTabs();
         this._loadBio();
+    }
+
+    /* ═══════════════════════════════════════════
+       HERO PARALLAX
+    ═══════════════════════════════════════════ */
+
+    _initParallax() {
+        const bg = document.getElementById('hero-parallax-bg');
+        if (!bg) return;
+        const heroHeight = window.innerHeight;
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            if (scrollY <= heroHeight) {
+                bg.style.transform = `translateY(${scrollY * 0.3}px)`;
+            }
+        }, { passive: true });
     }
 
     /* ═══════════════════════════════════════════

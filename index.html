@@ -547,8 +547,21 @@
                     </label>
                 </div>
                 <div class="sys-form-group" id="track-unlock-group" style="display:none">
-                    <label class="sys-label mono-label" for="track-unlock-code">ACCESS CODE (for exclusive content)</label>
-                    <input type="text" id="track-unlock-code" class="sys-input" placeholder="Secret code">
+                    <label class="sys-label mono-label" for="track-unlock-code">UNLOCK CODE (embed in Stripe success URL)</label>
+                    <input type="text" id="track-unlock-code" class="sys-input" placeholder="Secret code" oninput="updateStripeSetupPanel()">
+                </div>
+                <div class="sys-form-group">
+                    <label class="sys-label mono-label" for="track-download-url">DOWNLOAD URL (direct link after purchase)</label>
+                    <input type="url" id="track-download-url" class="sys-input" placeholder="https://... (Google Drive, Dropbox, etc.)">
+                </div>
+                <!-- Stripe Setup Panel -->
+                <div class="stripe-setup-panel" id="stripe-setup-panel" style="display:none">
+                    <div class="stripe-panel-label mono-label">// STRIPE SETUP</div>
+                    <p class="stripe-panel-desc mono-label">Paste this URL into Stripe → Payment Link → "Redirect after payment"</p>
+                    <div class="stripe-url-row">
+                        <span class="stripe-url-display mono-label" id="stripe-success-url-display">— (save track with Unlock Code first) —</span>
+                        <button type="button" class="btn-copy-stripe" onclick="copyStripeUrl()">COPY</button>
+                    </div>
                 </div>
                 <div id="track-form-error" class="form-status form-status--error" style="display:none"></div>
                 <div class="sys-form-actions">
