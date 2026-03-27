@@ -587,16 +587,16 @@
                 </div>
             </div>
             <div class="purchase-options" id="purchase-options">
-                <a id="purchase-external-link" href="#" target="_blank" rel="noopener" class="btn-sys-primary btn-purchase-main">
-                    ACQUIRE NOW →
+                <a id="stripe-pay-btn" href="#" target="_blank" rel="noopener" class="btn-stripe-pay" style="display:none">
+                    PAY WITH STRIPE →
                 </a>
                 <div class="purchase-divider mono-label">— OR CONTACT —</div>
                 <a id="purchase-email-link" href="mailto:contact@3eas.com" class="btn-sys-secondary">
                     REQUEST VIA EMAIL
                 </a>
             </div>
-            <div class="purchase-note mono-label">
-                After payment, you will receive a download link via email within 24 hours.
+            <div class="purchase-note mono-label" id="purchase-note">
+                You will be redirected to Stripe's secure checkout. Download unlocks automatically on return.
             </div>
             <!-- Unlock Code (for exclusive) -->
             <div id="purchase-unlock-section" style="display:none">
@@ -606,6 +606,33 @@
                     <button class="btn-sys-secondary" onclick="transmissionsManager.attemptUnlock()">UNLOCK</button>
                 </div>
                 <div id="purchase-unlock-error" class="form-status form-status--error" style="display:none"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download Modal -->
+    <div id="download-modal" class="sys-modal" role="dialog" aria-labelledby="download-modal-title" aria-modal="true">
+        <div class="sys-modal-content">
+            <button class="sys-modal-close" onclick="transmissionsManager.hideDownloadModal()" aria-label="Close">✕</button>
+            <div class="modal-sys-label mono-label">// TRANSMISSION UNLOCKED</div>
+            <h3 class="modal-title" id="download-modal-title">DOWNLOAD READY</h3>
+            <div class="download-track-info">
+                <div class="download-artwork" id="dl-artwork"></div>
+                <div class="download-details">
+                    <div class="download-track-title" id="dl-track-title">—</div>
+                    <div class="download-track-artist mono-label" id="dl-track-artist">—</div>
+                </div>
+            </div>
+            <div class="download-actions">
+                <a id="download-mp3-btn" href="#" class="btn-download-mp3" style="display:none">
+                    ↓ DOWNLOAD MP3
+                </a>
+                <button class="btn-sys-secondary" onclick="transmissionsManager.playPurchasedTrack()">
+                    ▶ PLAY NOW
+                </button>
+            </div>
+            <div class="download-note mono-label">
+                This transmission has been unlocked. Your purchase is saved to this device.
             </div>
         </div>
     </div>
@@ -632,6 +659,7 @@
     <script src="js/storage.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/webgl-scene.js"></script>
+    <script src="js/stripe-checkout.js"></script>
     <script src="js/transmissions.js"></script>
     <script src="js/gallery.js"></script>
     <script src="js/media-upload.js"></script>

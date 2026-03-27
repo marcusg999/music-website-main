@@ -2137,3 +2137,202 @@ input[type="range"]::-moz-range-thumb {
     10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
     20%, 40%, 60%, 80% { transform: translateX(8px); }
 }
+
+/* ==========================================================================
+   STRIPE / PURCHASE / DOWNLOAD — NEW COMPONENTS
+   ========================================================================== */
+
+/* ── Purchased track row state ── */
+.track-row.purchased {
+    border-color: rgba(255,255,255,0.18);
+}
+
+.track-purchased-badge {
+    font-size: 0.5rem;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    border: 1px solid var(--border-mid);
+    padding: 2px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* ── Download button on track row ── */
+.btn-download-row {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    padding: 6px 12px;
+    border: 1px solid var(--border-mid);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background var(--t-fast), color var(--t-fast);
+    white-space: nowrap;
+}
+
+.btn-download-row:hover {
+    background: var(--text);
+    color: var(--bg);
+}
+
+/* ── Stripe pay button in purchase modal ── */
+.btn-stripe-pay {
+    display: block;
+    width: 100%;
+    padding: 14px 24px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: none;
+    background: var(--text);
+    color: var(--bg);
+    border: 1px solid var(--text);
+    cursor: pointer;
+    transition: background var(--t-fast), color var(--t-fast);
+}
+
+.btn-stripe-pay:hover {
+    background: transparent;
+    color: var(--text);
+}
+
+/* ── Stripe setup panel in track form ── */
+.stripe-setup-panel {
+    margin-top: 0.5rem;
+    padding: 14px 16px;
+    border: 1px solid var(--border-mid);
+    background: rgba(255,255,255,0.03);
+}
+
+.stripe-panel-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+}
+
+.stripe-panel-desc {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+}
+
+.stripe-url-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.stripe-url-display {
+    flex: 1;
+    font-size: 0.58rem;
+    color: var(--text);
+    word-break: break-all;
+    background: rgba(255,255,255,0.05);
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    min-width: 0;
+}
+
+.btn-copy-stripe {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    padding: 6px 14px;
+    border: 1px solid var(--border-mid);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background var(--t-fast), color var(--t-fast);
+}
+
+.btn-copy-stripe:hover {
+    background: var(--text);
+    color: var(--bg);
+}
+
+/* ── Download modal ── */
+.download-track-info {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin: 24px 0;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.download-artwork {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    background: var(--border);
+    overflow: hidden;
+}
+
+.download-artwork img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.download-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.download-track-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.download-track-artist {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+}
+
+.download-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.btn-download-mp3 {
+    display: block;
+    width: 100%;
+    padding: 14px 24px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: none;
+    background: var(--text);
+    color: var(--bg);
+    border: 1px solid var(--text);
+    transition: background var(--t-fast), color var(--t-fast);
+}
+
+.btn-download-mp3:hover {
+    background: transparent;
+    color: var(--text);
+}
+
+.download-note {
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    text-align: center;
+}
