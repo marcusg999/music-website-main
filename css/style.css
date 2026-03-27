@@ -20,9 +20,9 @@
     --grid-line:    rgba(255, 255, 255, 0.04);
 
     /* Fonts */
-    --font-display: 'IBM Plex Mono', 'Courier New', monospace;
-    --font-mono:    'IBM Plex Mono', 'Courier New', monospace;
-    --font-body:    'IBM Plex Mono', 'Courier New', monospace;
+    --font-display: 'Space Grotesk', 'Arial Black', sans-serif;
+    --font-mono:    'Space Mono', 'Courier New', monospace;
+    --font-body:    'Space Grotesk', 'Arial', sans-serif;
 
     /* Sizes */
     --nav-h:        56px;
