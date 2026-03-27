@@ -56,25 +56,27 @@ class TransmissionsManager {
        AUDIO BLOBS (IndexedDB via storage.js)
     ═══════════════════════════════════════════ */
 
-    async _saveAudioBlob(id, blob) {
-        if (window.storageManager) {
+    async _saveAudioBlob(id, file) {
+        if (window.storage) {
             try {
-                await storageManager.storeAudioFile(id, blob.name || id, blob);
+                const result = await storage.saveAudioFile(file);
+                return result; // returns the auto-increment db id
             } catch (e) {
                 console.warn('Could not store audio in IndexedDB', e);
             }
         }
+        return null;
     }
 
     async _getAudioURL(track) {
         // If inline blobURL cached on track object, use it
         if (track._blobURL) return track._blobURL;
 
-        // Try IndexedDB
-        if (window.storageManager && track.audioStorageKey) {
+        // Try IndexedDB by stored db id
+        if (window.storage && track.audioDbId) {
             try {
-                const files = await storageManager.getAllAudioFiles();
-                const match = files.find(f => f.name === track.audioStorageKey);
+                const files = await storage.getAllAudioFiles();
+                const match = files.find(f => f.id === track.audioDbId);
                 if (match && match.blob) {
                     track._blobURL = URL.createObjectURL(match.blob);
                     return track._blobURL;
@@ -88,10 +90,17 @@ class TransmissionsManager {
         return track.externalAudioUrl || null;
     }
 
-    async _saveArtworkBlob(id, blob) {
-        if (window.storageManager) {
+    async _saveArtworkBlob(id, file) {
+        if (window.storage) {
             try {
-                await storageManager.storeImage(id, blob.name || id, blob);
+                const imageData = {
+                    id: id,
+                    filename: file.name,
+                    blob: file,
+                    uploadDate: new Date().toISOString(),
+                    size: file.size,
+                };
+                await storage.saveImage(imageData);
             } catch (e) {
                 console.warn('Could not store artwork blob', e);
             }
@@ -101,9 +110,9 @@ class TransmissionsManager {
     async _getArtworkURL(track) {
         if (track._artworkURL) return track._artworkURL;
 
-        if (window.storageManager && track.artworkStorageKey) {
+        if (window.storage && track.artworkStorageKey) {
             try {
-                const images = await storageManager.getAllImages();
+                const images = await storage.getAllImages();
                 const match = images.find(i => i.id === track.artworkStorageKey);
                 if (match && match.blob) {
                     track._artworkURL = URL.createObjectURL(match.blob);
@@ -563,11 +572,11 @@ class TransmissionsManager {
                 if (errorEl) { errorEl.textContent = 'Audio file too large (max 100MB).'; errorEl.style.display = 'block'; }
                 return;
             }
-            track.audioStorageKey = id + '_audio';
             track._blobURL = URL.createObjectURL(audioFile);
-            // Persist to IndexedDB
+            // Persist to IndexedDB, store returned db id for reload lookup
             const namedBlob = new File([audioFile], id + '_audio', { type: audioFile.type });
-            await this._saveAudioBlob(id + '_audio', namedBlob);
+            const dbId = await this._saveAudioBlob(id + '_audio', namedBlob);
+            if (dbId) track.audioDbId = dbId;
         }
 
         // Handle artwork file
@@ -633,7 +642,8 @@ class TransmissionsManager {
                 };
 
                 const namedBlob = new File([file], id + '_audio', { type: file.type });
-                await this._saveAudioBlob(id + '_audio', namedBlob);
+                const dbId = await this._saveAudioBlob(id + '_audio', namedBlob);
+                if (dbId) track.audioDbId = dbId;
                 this.tracks.push(track);
             }
 

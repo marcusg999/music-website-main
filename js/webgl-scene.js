@@ -1,244 +1,176 @@
 /**
- * WebGL Scene - Three.js Mayan-inspired 3D background
+ * WebGL Scene — Subtle starfield / particle system
+ * Matches the dark, technical aesthetic of the 3EAS design system.
+ * Pure white/grey particles, minimal motion, no color.
  */
 
 class WebGLScene {
     constructor() {
         this.canvas = document.getElementById('webgl-canvas');
-        this.scene = null;
-        this.camera = null;
+        if (!this.canvas || typeof THREE === 'undefined') return;
+
+        this.scene    = null;
+        this.camera   = null;
         this.renderer = null;
         this.particles = null;
-        this.glyphs = [];
-        this.clock = new THREE.Clock();
-        
-        this.init();
-        this.animate();
-        this.handleResize();
+        this.lines     = null;
+        this.clock     = new THREE.Clock();
+        this._paused   = false;
+
+        this._init();
+        this._animate();
+        this._bindResize();
+        this._bindVisibility();
     }
 
-    init() {
-        // Create scene
+    _init() {
+        /* Scene */
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.FogExp2(0x0F0F1E, 0.002);
 
-        // Create camera
+        /* Camera */
         this.camera = new THREE.PerspectiveCamera(
-            75,
+            60,
             window.innerWidth / window.innerHeight,
             0.1,
-            1000
+            500
         );
-        this.camera.position.z = 30;
+        this.camera.position.set(0, 0, 60);
 
-        // Create renderer
+        /* Renderer */
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
-            antialias: true,
-            alpha: true
+            antialias: false,
+            alpha: true,
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        this.renderer.setClearColor(0x000000, 0); // transparent — CSS sets bg
 
-        // Add lighting
-        const ambientLight = new THREE.AmbientLight(0x40E0D0, 0.5);
-        this.scene.add(ambientLight);
+        /* Particles — starfield */
+        this._createStarfield();
 
-        const pointLight1 = new THREE.PointLight(0xFF6B9D, 1, 100);
-        pointLight1.position.set(10, 10, 10);
-        this.scene.add(pointLight1);
-
-        const pointLight2 = new THREE.PointLight(0x7FFFD4, 0.8, 100);
-        pointLight2.position.set(-10, -10, -10);
-        this.scene.add(pointLight2);
-
-        // Create particle system
-        this.createParticles();
-
-        // Create rotating Mayan glyphs
-        this.createGlyphs();
-
-        // Add textured planes
-        this.createTexturedPlanes();
+        /* Fine grid lines — depth planes */
+        this._createDepthLines();
     }
 
-    createParticles() {
-        const particleCount = 1500;
-        const positions = new Float32Array(particleCount * 3);
-        const colors = new Float32Array(particleCount * 3);
+    _createStarfield() {
+        const COUNT = 1800;
+        const positions = new Float32Array(COUNT * 3);
+        const alphas    = new Float32Array(COUNT);
 
-        for (let i = 0; i < particleCount * 3; i += 3) {
-            // Random positions
-            positions[i] = (Math.random() - 0.5) * 100;
-            positions[i + 1] = (Math.random() - 0.5) * 100;
-            positions[i + 2] = (Math.random() - 0.5) * 100;
-
-            // Neon pastel colors
-            const colorChoice = Math.random();
-            if (colorChoice < 0.33) {
-                // Pastel neon pink/red
-                colors[i] = 1.0;      // R
-                colors[i + 1] = 0.42; // G
-                colors[i + 2] = 0.62; // B
-            } else if (colorChoice < 0.66) {
-                // Turquoise
-                colors[i] = 0.25;     // R
-                colors[i + 1] = 0.88; // G
-                colors[i + 2] = 0.82; // B
-            } else {
-                // Aquamarine
-                colors[i] = 0.5;      // R
-                colors[i + 1] = 1.0;  // G
-                colors[i + 2] = 0.83; // B
-            }
+        for (let i = 0; i < COUNT; i++) {
+            positions[i * 3]     = (Math.random() - 0.5) * 200;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+            alphas[i]             = Math.random() * 0.5 + 0.1;
         }
 
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-        const material = new THREE.PointsMaterial({
-            size: 0.5,
-            vertexColors: true,
+        const mat = new THREE.PointsMaterial({
+            size: 0.35,
+            color: 0xffffff,
             transparent: true,
-            opacity: 0.6,
-            blending: THREE.AdditiveBlending
+            opacity: 0.45,
+            sizeAttenuation: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
         });
 
-        this.particles = new THREE.Points(geometry, material);
+        this.particles = new THREE.Points(geo, mat);
         this.scene.add(this.particles);
-    }
 
-    createGlyphs() {
-        // Create simple geometric shapes representing Mayan glyphs
-        const glyphGeometries = [
-            new THREE.TorusGeometry(2, 0.5, 8, 12),
-            new THREE.OctahedronGeometry(2),
-            new THREE.TetrahedronGeometry(2),
-            new THREE.BoxGeometry(2, 2, 2)
-        ];
-
-        const materials = [
-            new THREE.MeshStandardMaterial({
-                color: 0xFF6B9D,
-                metalness: 0.3,
-                roughness: 0.7,
-                emissive: 0xFF6B9D,
-                emissiveIntensity: 0.2
-            }),
-            new THREE.MeshStandardMaterial({
-                color: 0x40E0D0,
-                metalness: 0.3,
-                roughness: 0.7,
-                emissive: 0x40E0D0,
-                emissiveIntensity: 0.2
-            }),
-            new THREE.MeshStandardMaterial({
-                color: 0x7FFFD4,
-                metalness: 0.5,
-                roughness: 0.5,
-                emissive: 0x7FFFD4,
-                emissiveIntensity: 0.3
-            })
-        ];
-
-        // Create 5 glyphs at different positions
-        for (let i = 0; i < 5; i++) {
-            const geometry = glyphGeometries[Math.floor(Math.random() * glyphGeometries.length)];
-            const material = materials[Math.floor(Math.random() * materials.length)];
-            const glyph = new THREE.Mesh(geometry, material);
-
-            // Position glyphs
-            glyph.position.x = (Math.random() - 0.5) * 40;
-            glyph.position.y = (Math.random() - 0.5) * 40;
-            glyph.position.z = (Math.random() - 0.5) * 40;
-
-            // Random rotation
-            glyph.rotation.x = Math.random() * Math.PI;
-            glyph.rotation.y = Math.random() * Math.PI;
-
-            // Store rotation speed
-            glyph.userData.rotationSpeed = {
-                x: (Math.random() - 0.5) * 0.02,
-                y: (Math.random() - 0.5) * 0.02,
-                z: (Math.random() - 0.5) * 0.02
-            };
-
-            this.glyphs.push(glyph);
-            this.scene.add(glyph);
+        /* Larger, brighter sparse stars */
+        const FEW = 80;
+        const bigPos = new Float32Array(FEW * 3);
+        for (let i = 0; i < FEW; i++) {
+            bigPos[i * 3]     = (Math.random() - 0.5) * 180;
+            bigPos[i * 3 + 1] = (Math.random() - 0.5) * 180;
+            bigPos[i * 3 + 2] = (Math.random() - 0.5) * 100;
         }
-    }
-
-    createTexturedPlanes() {
-        // Create textured planes in the background
-        const geometry = new THREE.PlaneGeometry(15, 15);
-        const material = new THREE.MeshStandardMaterial({
-            color: 0x1A1A2E,
-            metalness: 0.1,
-            roughness: 0.9,
+        const bigGeo = new THREE.BufferGeometry();
+        bigGeo.setAttribute('position', new THREE.BufferAttribute(bigPos, 3));
+        const bigMat = new THREE.PointsMaterial({
+            size: 0.8,
+            color: 0xffffff,
             transparent: true,
-            opacity: 0.3
+            opacity: 0.7,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+        });
+        const bigStars = new THREE.Points(bigGeo, bigMat);
+        this.scene.add(bigStars);
+    }
+
+    _createDepthLines() {
+        /* A few subtle receding horizontal/vertical lines in perspective */
+        const lineMat = new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.04,
         });
 
-        for (let i = 0; i < 3; i++) {
-            const plane = new THREE.Mesh(geometry, material);
-            plane.position.z = -20 - i * 10;
-            plane.position.x = (Math.random() - 0.5) * 30;
-            plane.position.y = (Math.random() - 0.5) * 30;
-            plane.rotation.z = Math.random() * Math.PI;
-            this.scene.add(plane);
+        const LINES = 8;
+        for (let i = 0; i < LINES; i++) {
+            const points = [
+                new THREE.Vector3(-100, (i - LINES / 2) * 12, -60),
+                new THREE.Vector3( 100, (i - LINES / 2) * 12, -60),
+            ];
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geo, lineMat);
+            this.scene.add(line);
+        }
+        for (let i = 0; i < LINES; i++) {
+            const points = [
+                new THREE.Vector3((i - LINES / 2) * 14, -100, -60),
+                new THREE.Vector3((i - LINES / 2) * 14,  100, -60),
+            ];
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geo, lineMat);
+            this.scene.add(line);
         }
     }
 
-    animate() {
-        requestAnimationFrame(() => this.animate());
+    _animate() {
+        requestAnimationFrame(() => this._animate());
+        if (this._paused) return;
 
-        const delta = this.clock.getDelta();
-        const elapsed = this.clock.getElapsedTime();
+        const t = this.clock.getElapsedTime();
 
-        // Rotate particles slowly
         if (this.particles) {
-            this.particles.rotation.y += 0.0005;
-            this.particles.rotation.x = Math.sin(elapsed * 0.1) * 0.1;
+            // Very slow drift
+            this.particles.rotation.y = t * 0.008;
+            this.particles.rotation.x = Math.sin(t * 0.015) * 0.03;
         }
 
-        // Rotate glyphs
-        this.glyphs.forEach(glyph => {
-            glyph.rotation.x += glyph.userData.rotationSpeed.x;
-            glyph.rotation.y += glyph.userData.rotationSpeed.y;
-            glyph.rotation.z += glyph.userData.rotationSpeed.z;
-
-            // Gentle floating motion
-            glyph.position.y += Math.sin(elapsed + glyph.position.x) * 0.002;
-        });
-
-        // Slowly rotate camera
-        this.camera.position.x = Math.sin(elapsed * 0.05) * 2;
-        this.camera.position.y = Math.cos(elapsed * 0.03) * 2;
+        // Gentle camera drift
+        this.camera.position.x = Math.sin(t * 0.04) * 1.5;
+        this.camera.position.y = Math.cos(t * 0.03) * 0.8;
         this.camera.lookAt(0, 0, 0);
 
         this.renderer.render(this.scene, this.camera);
     }
 
-    handleResize() {
+    _bindResize() {
         window.addEventListener('resize', () => {
-            // Update camera
+            if (!this.camera || !this.renderer) return;
             this.camera.aspect = window.innerWidth / window.innerHeight;
             this.camera.updateProjectionMatrix();
-
-            // Update renderer
             this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        });
+    }
+
+    _bindVisibility() {
+        document.addEventListener('visibilitychange', () => {
+            this._paused = document.hidden;
+            if (!document.hidden) this.clock.getDelta(); // reset delta
         });
     }
 }
 
-// Initialize WebGL scene when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if Three.js is loaded
     if (typeof THREE !== 'undefined') {
         new WebGLScene();
-    } else {
-        console.error('Three.js not loaded');
     }
 });

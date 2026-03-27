@@ -31,7 +31,7 @@ class GalleryManager {
             });
         }
         
-        const lightboxClose = document.querySelector('.lightbox-close-gallery');
+        const lightboxClose = document.getElementById('lightbox-close-btn') || document.querySelector('.lightbox-close-gallery');
         if (lightboxClose) {
             lightboxClose.addEventListener('click', () => this.closeLightbox());
         }
@@ -249,9 +249,7 @@ class GalleryManager {
             await this.loadImages();
             this.renderGallery();
             
-            if (window.musicWebsite) {
-                window.musicWebsite.showNotification('Image deleted successfully', 'success');
-            }
+            window.showToast && window.showToast('Image deleted.', 'success');
         } catch (error) {
             console.error('Failed to delete image:', error);
             alert('Failed to delete image');

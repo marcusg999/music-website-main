@@ -1,105 +1,126 @@
 /**
- * Authentication Manager - Client-side admin authentication
+ * AuthManager — Admin authentication + menu visibility control
  */
 
 class AuthManager {
     constructor() {
         this.isAuthenticated = false;
         this.currentUser = null;
-        this.initializeUsers();
+        this._initUsers();
+        this._initMenuVisibility();
         this.init();
     }
 
-    initializeUsers() {
-        // Initialize user list in localStorage if not exists
+    /* ═══════════════════════════════════════════
+       USER STORAGE
+    ═══════════════════════════════════════════ */
+
+    _initUsers() {
         const users = localStorage.getItem('adminUsers');
         if (!users) {
-            // Default admin user
-            const defaultUsers = [
-                {
-                    username: 'admin',
-                    password: 'beas2026',
-                    createdAt: new Date().toISOString()
-                }
-            ];
-            localStorage.setItem('adminUsers', JSON.stringify(defaultUsers));
+            localStorage.setItem('adminUsers', JSON.stringify([
+                { username: 'admin', password: 'beas2026', createdAt: new Date().toISOString() }
+            ]));
         }
     }
 
     getUsers() {
-        const users = localStorage.getItem('adminUsers');
-        return users ? JSON.parse(users) : [];
+        try {
+            return JSON.parse(localStorage.getItem('adminUsers')) || [];
+        } catch (e) { return []; }
     }
 
     addUser(username, password) {
-        if (!username || !password) {
-            return { success: false, message: 'Username and password are required' };
-        }
-
+        if (!username || !password) return { success: false, message: 'Username and password required' };
         const users = this.getUsers();
-        
-        // Check if username already exists
-        if (users.some(u => u.username === username)) {
-            return { success: false, message: 'Username already exists' };
-        }
-
-        // Add new user
-        users.push({
-            username: username,
-            password: password,
-            createdAt: new Date().toISOString()
-        });
-
+        if (users.some(u => u.username === username)) return { success: false, message: 'Username already exists' };
+        users.push({ username, password, createdAt: new Date().toISOString() });
         localStorage.setItem('adminUsers', JSON.stringify(users));
-        return { success: true, message: 'User added successfully' };
+        return { success: true, message: 'User added' };
     }
 
     deleteUser(username) {
-        if (username === 'admin') {
-            return { success: false, message: 'Cannot delete default admin user' };
-        }
-
+        if (username === 'admin') return { success: false, message: 'Cannot delete default admin' };
         const users = this.getUsers();
-        const filteredUsers = users.filter(u => u.username !== username);
-        
-        if (filteredUsers.length === users.length) {
-            return { success: false, message: 'User not found' };
-        }
-
-        localStorage.setItem('adminUsers', JSON.stringify(filteredUsers));
-        return { success: true, message: 'User deleted successfully' };
+        const filtered = users.filter(u => u.username !== username);
+        if (filtered.length === users.length) return { success: false, message: 'User not found' };
+        localStorage.setItem('adminUsers', JSON.stringify(filtered));
+        return { success: true, message: 'User deleted' };
     }
+
+    /* ═══════════════════════════════════════════
+       MENU VISIBILITY
+    ═══════════════════════════════════════════ */
+
+    _initMenuVisibility() {
+        // Default: all sections visible
+        const defaults = { transmissions: true, visuals: true, acquisitions: true, signal: true, access: true };
+        const stored = localStorage.getItem('sectionVisibility');
+        this._sectionVisibility = stored ? { ...defaults, ...JSON.parse(stored) } : defaults;
+    }
+
+    _saveMenuVisibility() {
+        localStorage.setItem('sectionVisibility', JSON.stringify(this._sectionVisibility));
+    }
+
+    setSectionVisible(section, visible) {
+        this._sectionVisibility[section] = visible;
+        this._saveMenuVisibility();
+        this._applySectionVisibility();
+    }
+
+    _applySectionVisibility() {
+        const sections = ['transmissions', 'visuals', 'acquisitions', 'signal', 'access'];
+        sections.forEach(section => {
+            const visible = this._sectionVisibility[section] !== false;
+
+            // Hide/show section element
+            const sectionEl = document.getElementById(section);
+            if (sectionEl) sectionEl.style.display = visible ? '' : 'none';
+
+            // Hide/show nav item
+            const navItem = document.getElementById('nav-item-' + section);
+            if (navItem) navItem.style.display = visible ? '' : 'none';
+
+            // Hide/show mobile nav item
+            const mobileItem = document.getElementById('mobile-item-' + section);
+            if (mobileItem) mobileItem.style.display = visible ? '' : 'none';
+        });
+    }
+
+    _syncToggleCheckboxes() {
+        document.querySelectorAll('.section-toggle').forEach(checkbox => {
+            const section = checkbox.dataset.section;
+            checkbox.checked = this._sectionVisibility[section] !== false;
+
+            checkbox.addEventListener('change', () => {
+                this.setSectionVisible(section, checkbox.checked);
+            });
+        });
+    }
+
+    /* ═══════════════════════════════════════════
+       AUTH
+    ═══════════════════════════════════════════ */
 
     init() {
-        // Check if user is already logged in (session storage)
         const authState = sessionStorage.getItem('isAuthenticated');
-        const currentUser = sessionStorage.getItem('currentUser');
-        if (authState === 'true' && currentUser) {
+        const user = sessionStorage.getItem('currentUser');
+        if (authState === 'true' && user) {
             this.isAuthenticated = true;
-            this.currentUser = currentUser;
-            this.updateUI();
+            this.currentUser = user;
         }
-        
-        // Initialize UI
+
         this.updateUI();
-        
-        // Setup modal close on outside click
-        this.setupModalCloseOnOutsideClick();
+        this._applySectionVisibility();
+        this._setupModalBackdropClose();
     }
 
-    setupModalCloseOnOutsideClick() {
-        const modals = ['admin-login-modal', 'user-management-modal', 'event-modal'];
-        
-        modals.forEach(modalId => {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    // Check if click is directly on the modal backdrop (not on modal content)
-                    if (e.target === modal) {
-                        modal.classList.remove('active');
-                    }
-                });
-            }
+    _setupModalBackdropClose() {
+        document.querySelectorAll('.sys-modal').forEach(modal => {
+            modal.addEventListener('click', e => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
         });
     }
 
@@ -108,26 +129,14 @@ class AuthManager {
     }
 
     login(username, password) {
-        const users = this.getUsers();
-        const user = users.find(u => u.username === username && u.password === password);
-        
+        const user = this.getUsers().find(u => u.username === username && u.password === password);
         if (user) {
             this.isAuthenticated = true;
             this.currentUser = username;
             sessionStorage.setItem('isAuthenticated', 'true');
             sessionStorage.setItem('currentUser', username);
             this.updateUI();
-            
-            // Update bio editable state if main.js is loaded
-            if (typeof window.musicWebsite !== 'undefined' && window.musicWebsite.updateBioEditableState) {
-                window.musicWebsite.updateBioEditableState();
-            }
-            
-            // Trigger event re-render if events manager is available
-            if (typeof eventsManager !== 'undefined' && eventsManager.renderEvents) {
-                eventsManager.renderEvents();
-            }
-            
+            this._notifyModules();
             return true;
         }
         return false;
@@ -139,261 +148,175 @@ class AuthManager {
         sessionStorage.removeItem('isAuthenticated');
         sessionStorage.removeItem('currentUser');
         this.updateUI();
-        
-        // Update bio editable state if main.js is loaded
-        if (typeof window.musicWebsite !== 'undefined' && window.musicWebsite.updateBioEditableState) {
-            window.musicWebsite.updateBioEditableState();
-        }
-        
-        // Trigger event re-render if events manager is available
-        if (typeof eventsManager !== 'undefined' && eventsManager.renderEvents) {
-            eventsManager.renderEvents();
-        }
-        
-        // Show logout notification
-        if (typeof window.musicWebsite !== 'undefined') {
-            window.musicWebsite.showNotification('Logged out successfully', 'success');
-        }
-        
-        // Scroll to top
+        this._notifyModules();
+        window.showToast && window.showToast('Logged out', 'success');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    isLoggedIn() {
-        return this.isAuthenticated;
-    }
-
-    isAdmin() {
-        return this.isAuthenticated;
+    _notifyModules() {
+        if (window.transmissionsManager) transmissionsManager.onAuthChange();
+        if (window.galleryManager) galleryManager.renderGallery();
+        if (typeof eventsManager !== 'undefined' && eventsManager.renderEvents) eventsManager.renderEvents();
     }
 
     updateUI() {
-        this.updateUIBasedOnAuth();
-    }
+        const isAdmin = this.isAuthenticated;
 
-    updateUIBasedOnAuth() {
-        const loggedIn = this.isAdmin();
-        
-        // Update navigation buttons
-        const uploadControls = document.querySelector('.upload-controls');
+        // Nav buttons
         const adminBtn = document.getElementById('admin-btn');
+        const manageBtn = document.getElementById('manage-btn');
         const logoutBtn = document.getElementById('logout-btn');
-        const manageUsersBtn = document.getElementById('manage-users-btn');
-        
-        if (loggedIn) {
-            // Show upload controls
-            if (uploadControls) {
-                uploadControls.style.display = 'flex';
-            }
-            
-            // Hide admin button, show logout and manage users
-            if (adminBtn) adminBtn.style.display = 'none';
-            if (logoutBtn) logoutBtn.style.display = 'inline-block';
-            if (manageUsersBtn) manageUsersBtn.style.display = 'inline-block';
-        } else {
-            // Hide upload controls
-            if (uploadControls) {
-                uploadControls.style.display = 'none';
-            }
-            
-            // Show admin button, hide logout and manage users
-            if (adminBtn) adminBtn.style.display = 'inline-block';
-            if (logoutBtn) logoutBtn.style.display = 'none';
-            if (manageUsersBtn) manageUsersBtn.style.display = 'none';
-        }
-        
-        // Events section - Add event button
-        const addEventBtn = document.getElementById('add-event-btn');
-        if (addEventBtn) {
-            addEventBtn.style.display = loggedIn ? 'inline-block' : 'none';
-        }
-        
-        // Edit/Delete buttons for events (will be updated when events are rendered)
-        document.querySelectorAll('.event-delete-btn').forEach(btn => {
-            btn.style.display = loggedIn ? 'inline-block' : 'none';
-        });
-        
-        // Bio section
+
+        if (adminBtn) adminBtn.style.display = isAdmin ? 'none' : 'inline-block';
+        if (manageBtn) manageBtn.style.display = isAdmin ? 'inline-block' : 'none';
+        if (logoutBtn) logoutBtn.style.display = isAdmin ? 'inline-block' : 'none';
+
+        // Admin bars
+        const adminBars = document.querySelectorAll('.admin-bar');
+        adminBars.forEach(bar => { bar.style.display = isAdmin ? 'flex' : 'none'; });
+
+        // Bio editing
         const bioText = document.getElementById('bio-text');
         const saveBioBtn = document.getElementById('save-bio-btn');
         if (bioText) {
-            if (loggedIn) {
-                bioText.setAttribute('contenteditable', 'true');
-                bioText.classList.add('editable');
-            } else {
-                bioText.removeAttribute('contenteditable');
-                bioText.classList.remove('editable');
-            }
+            bioText.contentEditable = isAdmin ? 'true' : 'false';
         }
+        if (saveBioBtn) saveBioBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
         // Gallery upload controls
-        const galleryUploadControls = document.getElementById('galleryUploadControls');
-        if (galleryUploadControls) {
-            galleryUploadControls.style.display = this.isAuthenticated ? 'block' : 'none';
-        }
-        
-        // Refresh gallery to show/hide delete buttons
-        if (window.galleryManager) {
-            galleryManager.renderGallery();
-        }
+        const galleryUpload = document.getElementById('gallery-upload-controls');
+        if (galleryUpload) galleryUpload.style.display = isAdmin ? 'flex' : 'none';
     }
+
+    /* ═══════════════════════════════════════════
+       LOGIN MODAL
+    ═══════════════════════════════════════════ */
 
     showLoginModal() {
         const modal = document.getElementById('admin-login-modal');
-        if (modal) {
-            modal.classList.add('active');
-            // Clear previous input
-            document.getElementById('admin-username').value = '';
-            document.getElementById('admin-password').value = '';
-            // Focus on username field
-            setTimeout(() => {
-                document.getElementById('admin-username').focus();
-            }, 100);
-        }
+        if (!modal) return;
+        modal.classList.add('active');
+        document.getElementById('admin-username').value = '';
+        document.getElementById('admin-password').value = '';
+        setTimeout(() => document.getElementById('admin-username').focus(), 100);
     }
 
     hideLoginModal() {
         const modal = document.getElementById('admin-login-modal');
-        if (modal) {
-            modal.classList.remove('active');
-        }
+        if (modal) modal.classList.remove('active');
     }
 
     handleLoginSubmit(event) {
         event.preventDefault();
-        
         const username = document.getElementById('admin-username').value;
         const password = document.getElementById('admin-password').value;
-        const errorMsg = document.getElementById('login-error');
-        
+        const errorEl = document.getElementById('login-error');
+
         if (this.login(username, password)) {
             this.hideLoginModal();
-            if (typeof window.musicWebsite !== 'undefined') {
-                window.musicWebsite.showNotification(`Welcome, ${this.currentUser}!`, 'success');
-            }
-            // Scroll to featured section
-            setTimeout(() => {
-                scrollToSection('featured');
-            }, 500);
+            window.showToast && window.showToast(`Welcome, ${this.currentUser}`, 'success');
         } else {
-            errorMsg.textContent = 'Invalid username or password';
-            errorMsg.style.display = 'block';
-            
-            // Shake animation
+            if (errorEl) { errorEl.textContent = 'Invalid credentials'; errorEl.style.display = 'block'; }
             const form = document.getElementById('admin-login-form');
-            form.style.animation = 'shake 0.5s';
-            setTimeout(() => {
-                form.style.animation = '';
-            }, 500);
+            if (form) {
+                form.style.animation = 'shake 0.4s';
+                setTimeout(() => { form.style.animation = ''; }, 400);
+            }
         }
     }
 
-    showUserManagementModal() {
-        const modal = document.getElementById('user-management-modal');
-        if (modal) {
-            modal.classList.add('active');
-            this.refreshUserList();
-        }
+    /* ═══════════════════════════════════════════
+       ADMIN PANEL MODAL
+    ═══════════════════════════════════════════ */
+
+    showAdminPanel() {
+        const modal = document.getElementById('admin-panel-modal');
+        if (!modal) return;
+
+        // Reset to first tab
+        document.querySelectorAll('.panel-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+        document.getElementById('panel-menu').style.display = 'block';
+        document.getElementById('panel-users').style.display = 'none';
+
+        this._syncToggleCheckboxes();
+        this._refreshUserList();
+        modal.classList.add('active');
     }
 
-    hideUserManagementModal() {
-        const modal = document.getElementById('user-management-modal');
-        if (modal) {
-            modal.classList.remove('active');
-        }
+    hideAdminPanel() {
+        const modal = document.getElementById('admin-panel-modal');
+        if (modal) modal.classList.remove('active');
     }
 
-    refreshUserList() {
+    /* ═══════════════════════════════════════════
+       USER MANAGEMENT
+    ═══════════════════════════════════════════ */
+
+    _refreshUserList() {
+        const list = document.getElementById('user-list');
+        if (!list) return;
         const users = this.getUsers();
-        const userList = document.getElementById('user-list');
-        
-        if (!userList) return;
-        
-        userList.innerHTML = '';
-        
-        users.forEach(user => {
-            const userItem = document.createElement('div');
-            userItem.className = 'user-item';
-            userItem.innerHTML = `
+        list.innerHTML = users.map(u => `
+            <div class="user-item">
                 <div class="user-info">
-                    <span class="user-username">${user.username}</span>
-                    <span class="user-date">Created: ${new Date(user.createdAt).toLocaleDateString()}</span>
+                    <span class="user-username">${u.username}</span>
+                    <span class="user-date mono-label">Created: ${new Date(u.createdAt).toLocaleDateString()}</span>
                 </div>
-                <button class="btn-delete-user" onclick="authManager.confirmDeleteUser('${user.username}')" 
-                        ${user.username === 'admin' ? 'disabled title="Cannot delete default admin"' : ''}>
-                    Delete
+                <button class="btn-delete-user"
+                    onclick="authManager._confirmDeleteUser('${u.username}')"
+                    ${u.username === 'admin' ? 'disabled title="Cannot delete default admin"' : ''}>
+                    DELETE
                 </button>
-            `;
-            userList.appendChild(userItem);
-        });
+            </div>
+        `).join('');
     }
 
     handleAddUserSubmit(event) {
         event.preventDefault();
-        
         const username = document.getElementById('new-username').value.trim();
         const password = document.getElementById('new-password').value;
-        const confirmPassword = document.getElementById('confirm-password').value;
-        const errorMsg = document.getElementById('add-user-error');
-        const successMsg = document.getElementById('add-user-success');
-        
-        // Hide previous messages
-        errorMsg.style.display = 'none';
-        successMsg.style.display = 'none';
-        
-        // Validate
-        if (password !== confirmPassword) {
-            errorMsg.textContent = 'Passwords do not match';
-            errorMsg.style.display = 'block';
-            return;
+        const confirm  = document.getElementById('confirm-password').value;
+        const errorEl  = document.getElementById('add-user-error');
+        const successEl= document.getElementById('add-user-success');
+
+        errorEl.style.display = 'none';
+        successEl.style.display = 'none';
+
+        if (password !== confirm) {
+            errorEl.textContent = 'Passwords do not match'; errorEl.style.display = 'block'; return;
         }
-        
         if (password.length < 6) {
-            errorMsg.textContent = 'Password must be at least 6 characters';
-            errorMsg.style.display = 'block';
-            return;
+            errorEl.textContent = 'Password must be 6+ characters'; errorEl.style.display = 'block'; return;
         }
-        
-        // Add user
+
         const result = this.addUser(username, password);
-        
         if (result.success) {
-            successMsg.textContent = result.message;
-            successMsg.style.display = 'block';
-            
-            // Clear form
+            successEl.textContent = result.message; successEl.style.display = 'block';
             document.getElementById('new-username').value = '';
             document.getElementById('new-password').value = '';
             document.getElementById('confirm-password').value = '';
-            
-            // Refresh user list
-            this.refreshUserList();
-            
-            // Hide success message after 3 seconds
-            setTimeout(() => {
-                successMsg.style.display = 'none';
-            }, 3000);
+            this._refreshUserList();
+            setTimeout(() => { successEl.style.display = 'none'; }, 3000);
         } else {
-            errorMsg.textContent = result.message;
-            errorMsg.style.display = 'block';
+            errorEl.textContent = result.message; errorEl.style.display = 'block';
         }
     }
 
-    confirmDeleteUser(username) {
-        if (confirm(`Are you sure you want to delete user "${username}"?`)) {
-            const result = this.deleteUser(username);
-            
-            if (result.success) {
-                this.refreshUserList();
-                if (typeof window.musicWebsite !== 'undefined') {
-                    window.musicWebsite.showNotification(result.message, 'success');
-                }
-            } else {
-                alert(result.message);
-            }
+    _confirmDeleteUser(username) {
+        if (!confirm(`Delete user "${username}"?`)) return;
+        const result = this.deleteUser(username);
+        if (result.success) {
+            this._refreshUserList();
+            window.showToast && window.showToast(result.message, 'success');
+        } else {
+            alert(result.message);
         }
     }
+
+    /* Legacy compat */
+    showUserManagementModal() { this.showAdminPanel(); }
+    hideUserManagementModal() { this.hideAdminPanel(); }
+    confirmDeleteUser(username) { this._confirmDeleteUser(username); }
 }
 
-// Create global auth instance
 const authManager = new AuthManager();

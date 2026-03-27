@@ -1,291 +1,253 @@
 /**
- * Main Application - Navigation, forms, and general functionality
+ * main.js — Navigation, Bio, Forms, Toasts, Global helpers
+ * 3EAS SYSTEM
  */
 
-class MusicWebsite {
+class SiteController {
     constructor() {
-        this.init();
+        this._initNav();
+        this._initBio();
+        this._initForms();
+        this._initVisualTabs();
+        this._loadBio();
     }
 
-    init() {
-        this.initNavigation();
-        this.initBio();
-        this.initForms();
-        this.initLightbox();
-        this.initIntersectionObserver();
-    }
+    /* ═══════════════════════════════════════════
+       NAVIGATION
+    ═══════════════════════════════════════════ */
 
-    // Navigation
-    initNavigation() {
-        const mobileToggle = document.querySelector('.mobile-menu-toggle');
-        const navMenu = document.querySelector('.nav-menu');
-        const navLinks = document.querySelectorAll('.nav-link');
+    _initNav() {
+        const toggle = document.getElementById('mobile-toggle');
+        const overlay = document.getElementById('mobile-nav-overlay');
+        const closeBtn = document.getElementById('mobile-nav-close');
 
-        // Mobile menu toggle
-        mobileToggle.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
-            mobileToggle.classList.toggle('active');
-        });
-
-        // Close mobile menu when link is clicked
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                navMenu.classList.remove('active');
-                mobileToggle.classList.remove('active');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                overlay.classList.toggle('open');
+                document.body.style.overflow = overlay.classList.contains('open') ? 'hidden' : '';
             });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this._closeMobileNav());
+        }
+
+        // Close overlay when a link is tapped
+        document.querySelectorAll('.mobile-nav-link').forEach(link => {
+            link.addEventListener('click', () => this._closeMobileNav());
         });
 
-        // Update active nav link on scroll
-        window.addEventListener('scroll', () => {
-            let current = '';
-            const sections = document.querySelectorAll('.section');
-            
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.clientHeight;
-                if (window.pageYOffset >= sectionTop - 200) {
-                    current = section.getAttribute('id');
+        // Close on backdrop click
+        if (overlay) {
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) this._closeMobileNav();
+            });
+        }
+
+        // Active link on scroll
+        window.addEventListener('scroll', () => this._updateActiveNav(), { passive: true });
+        this._updateActiveNav();
+    }
+
+    _closeMobileNav() {
+        const overlay = document.getElementById('mobile-nav-overlay');
+        if (overlay) overlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    _updateActiveNav() {
+        const sections = ['transmissions', 'visuals', 'acquisitions', 'signal', 'access'];
+        let current = '';
+        const scrollY = window.scrollY + 100;
+
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.offsetTop <= scrollY) current = id;
+        });
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            const href = link.getAttribute('href');
+            link.classList.toggle('active', href === '#' + current);
+        });
+    }
+
+    /* ═══════════════════════════════════════════
+       BIO
+    ═══════════════════════════════════════════ */
+
+    _loadBio() {
+        const bioText = document.getElementById('bio-text');
+        if (!bioText) return;
+        try {
+            const saved = localStorage.getItem('bio');
+            if (saved) bioText.innerHTML = saved;
+        } catch (e) { /* pass */ }
+    }
+
+    _initBio() {
+        const saveBioBtn = document.getElementById('save-bio-btn');
+        const bioText = document.getElementById('bio-text');
+
+        if (saveBioBtn && bioText) {
+            saveBioBtn.addEventListener('click', () => {
+                if (!window.authManager || !authManager.isAdmin()) return;
+                try {
+                    localStorage.setItem('bio', bioText.innerHTML);
+                    window.showToast('Signal saved.', 'success');
+                } catch (e) {
+                    window.showToast('Save failed.', 'error');
                 }
             });
-
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === `#${current}`) {
-                    link.classList.add('active');
-                }
-            });
-
-            // Add shadow to nav on scroll
-            const nav = document.querySelector('.nav-bar');
-            if (window.scrollY > 50) {
-                nav.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.5)';
-            } else {
-                nav.style.boxShadow = 'none';
-            }
-        });
-    }
-
-    // Bio Section
-    initBio() {
-        const bioText = document.getElementById('bio-text');
-        const saveBioBtn = document.getElementById('save-bio-btn');
-
-        // Load saved bio
-        const savedBio = storage.getBio();
-        if (savedBio) {
-            bioText.innerHTML = savedBio;
-        }
-
-        // Set initial state based on auth status
-        this.updateBioEditableState();
-
-        // Save bio
-        saveBioBtn.addEventListener('click', () => {
-            // Check if user is logged in
-            if (!authManager || !authManager.isAdmin()) {
-                this.showNotification('You must be logged in to save bio.', 'error');
-                return;
-            }
-            
-            const content = bioText.innerHTML;
-            storage.saveBio(content);
-            this.showNotification('Bio saved successfully!', 'success');
-        });
-    }
-
-    updateBioEditableState() {
-        const bioText = document.getElementById('bio-text');
-        const saveBioBtn = document.getElementById('save-bio-btn');
-        const isAdmin = authManager && authManager.isAdmin();
-
-        if (bioText) {
-            if (isAdmin) {
-                bioText.setAttribute('contenteditable', 'true');
-                bioText.classList.add('editable');
-            } else {
-                bioText.removeAttribute('contenteditable');
-                bioText.classList.remove('editable');
-            }
-        }
-
-        if (saveBioBtn) {
-            saveBioBtn.style.display = isAdmin ? 'inline-block' : 'none';
         }
     }
 
-    // Forms
-    initForms() {
-        // Newsletter form
+    /* ═══════════════════════════════════════════
+       FORMS
+    ═══════════════════════════════════════════ */
+
+    _initForms() {
         const newsletterForm = document.getElementById('newsletter-form');
-        newsletterForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = document.getElementById('newsletter-email').value;
-            
-            if (this.validateEmail(email)) {
-                storage.saveNewsletterSubscription(email);
-                this.showFormMessage('newsletter-message', 'Thank you for subscribing!', 'success');
+        if (newsletterForm) {
+            newsletterForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const email = document.getElementById('newsletter-email').value.trim();
+                if (!this._validEmail(email)) {
+                    this._setFormStatus('newsletter-message', 'Invalid email address.', 'error');
+                    return;
+                }
+                try {
+                    const subs = JSON.parse(localStorage.getItem('newsletter') || '[]');
+                    if (!subs.includes(email)) subs.push(email);
+                    localStorage.setItem('newsletter', JSON.stringify(subs));
+                } catch (e) { /* pass */ }
+                this._setFormStatus('newsletter-message', 'Frequency locked in.', 'success');
                 newsletterForm.reset();
-            } else {
-                this.showFormMessage('newsletter-message', 'Please enter a valid email address', 'error');
-            }
-        });
-
-        // Contact form
-        const contactForm = document.getElementById('contact-form');
-        contactForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const name = document.getElementById('contact-name').value;
-            const email = document.getElementById('contact-email').value;
-            const message = document.getElementById('contact-message').value;
-
-            if (name && this.validateEmail(email) && message) {
-                storage.saveContactMessage({ name, email, message });
-                this.showFormMessage('contact-message-status', 'Message sent successfully!', 'success');
-                contactForm.reset();
-            } else {
-                this.showFormMessage('contact-message-status', 'Please fill in all fields correctly', 'error');
-            }
-        });
-    }
-
-    validateEmail(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
-    }
-
-    showFormMessage(elementId, message, type) {
-        const messageEl = document.getElementById(elementId);
-        messageEl.textContent = message;
-        messageEl.className = `form-message ${type}`;
-        
-        setTimeout(() => {
-            messageEl.className = 'form-message';
-        }, 5000);
-    }
-
-    showNotification(message, type = 'success') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 90px;
-            right: 20px;
-            background: ${type === 'success' ? 'var(--color-accent)' : '#CD5C5C'};
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-        `;
-        notification.textContent = message;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        }, 3000);
-    }
-
-    // Lightbox
-    initLightbox() {
-        const lightbox = document.getElementById('lightbox');
-        const lightboxImg = document.getElementById('lightbox-img');
-        const lightboxClose = document.querySelector('.lightbox-close');
-        const galleryItems = document.querySelectorAll('.gallery-item img');
-
-        galleryItems.forEach(img => {
-            img.addEventListener('click', () => {
-                lightbox.classList.add('active');
-                lightboxImg.src = img.src;
             });
-        });
+        }
 
-        lightboxClose.addEventListener('click', () => {
-            lightbox.classList.remove('active');
-        });
+        const contactForm = document.getElementById('contact-form');
+        if (contactForm) {
+            contactForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const name    = document.getElementById('contact-name').value.trim();
+                const email   = document.getElementById('contact-email').value.trim();
+                const message = document.getElementById('contact-message').value.trim();
 
-        lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) {
-                lightbox.classList.remove('active');
-            }
-        });
+                if (!name || !this._validEmail(email) || !message) {
+                    this._setFormStatus('contact-message-status', 'All fields required.', 'error');
+                    return;
+                }
+
+                try {
+                    const msgs = JSON.parse(localStorage.getItem('contacts') || '[]');
+                    msgs.push({ name, email, message, date: new Date().toISOString() });
+                    localStorage.setItem('contacts', JSON.stringify(msgs));
+                } catch (e) { /* pass */ }
+
+                // Try EmailJS if configured
+                if (window.emailjs && window.emailConfig) {
+                    emailjs.send(emailConfig.serviceId, emailConfig.templateId, {
+                        from_name: name,
+                        from_email: email,
+                        message,
+                    }).catch(() => {});
+                }
+
+                this._setFormStatus('contact-message-status', 'Transmission sent.', 'success');
+                contactForm.reset();
+            });
+        }
     }
 
-    // Intersection Observer for animations
-    initIntersectionObserver() {
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -100px 0px'
-        };
+    _validEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
+    _setFormStatus(id, message, type) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = message;
+        el.className = `form-status form-status--${type}`;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    /* ═══════════════════════════════════════════
+       VISUALS TABS (Photos / Video)
+    ═══════════════════════════════════════════ */
+
+    _initVisualTabs() {
+        const filters = document.querySelectorAll('[data-visual-filter]');
+        const galleryWrap = document.getElementById('galleryGrid');
+        const galleryEmpty = document.getElementById('galleryEmpty');
+        const videoSection = document.getElementById('video-section');
+
+        filters.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filters.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const filter = btn.dataset.visualFilter;
+                if (filter === 'photos') {
+                    if (galleryWrap) galleryWrap.style.display = '';
+                    if (galleryEmpty) galleryEmpty.style.display = '';
+                    if (videoSection) videoSection.style.display = 'none';
+                } else {
+                    if (galleryWrap) galleryWrap.style.display = 'none';
+                    if (galleryEmpty) galleryEmpty.style.display = 'none';
+                    if (videoSection) videoSection.style.display = 'block';
+                    // Show video upload controls if admin
+                    const videoUpload = document.getElementById('video-upload-controls');
+                    if (videoUpload && window.authManager && authManager.isAdmin()) {
+                        videoUpload.style.display = 'flex';
+                    }
                 }
             });
-        }, observerOptions);
-
-        // Observe sections
-        const sections = document.querySelectorAll('.section');
-        sections.forEach(section => {
-            section.style.opacity = '0';
-            section.style.transform = 'translateY(20px)';
-            section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(section);
         });
     }
 }
 
-// Global helper function for smooth scrolling
-function scrollToSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    if (section) {
-        section.scrollIntoView({ behavior: 'smooth' });
-    }
+/* ═══════════════════════════════════════════
+   TOAST SYSTEM
+═══════════════════════════════════════════ */
+window.showToast = function(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+};
+
+/* ═══════════════════════════════════════════
+   GLOBAL HELPERS
+═══════════════════════════════════════════ */
+function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.musicWebsite = new MusicWebsite();
+function showLinksEditor() {
+    // Future: could open a modal for editing access links
+    window.showToast('Links editor coming soon.', 'success');
+}
 
-    // Add animations to CSS dynamically
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+    window.siteController = new SiteController();
 });
 
-// Service Worker for offline support (optional)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        // Service worker can be implemented later for offline functionality
-    });
-}
+/* Legacy compat */
+window.musicWebsite = {
+    showNotification: (msg, type) => window.showToast(msg, type),
+    updateBioEditableState: () => {}
+};
