@@ -1,0 +1,352 @@
+/* ==========================================================================
+   Responsive Styles - Mobile First Approach
+   ========================================================================== */
+
+/* Tablet Styles (768px and below) */
+@media (max-width: 768px) {
+    /* Typography */
+    html {
+        font-size: 14px;
+    }
+
+    /* Navigation */
+    .mobile-menu-toggle {
+        display: flex;
+    }
+
+    .nav-menu {
+        position: fixed;
+        top: 70px;
+        left: -100%;
+        width: 100%;
+        height: calc(100vh - 70px);
+        background: rgba(26, 26, 26, 0.98);
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: var(--spacing-lg) 0;
+        transition: left var(--transition-normal);
+        backdrop-filter: blur(10px);
+    }
+
+    .nav-menu.active {
+        left: 0;
+    }
+
+    .nav-link {
+        width: 80%;
+        text-align: center;
+        padding: var(--spacing-md);
+        font-size: 1.2rem;
+    }
+
+    /* Hero Section */
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1.2rem;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        width: 100%;
+        padding: 0 var(--spacing-md);
+    }
+
+    .hero-actions .btn {
+        width: 100%;
+    }
+
+    /* Section Titles */
+    .section-title {
+        font-size: 2rem;
+    }
+
+    /* Bio Section */
+    .bio-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .image-placeholder {
+        width: 200px;
+        height: 200px;
+    }
+
+    /* Upload Controls */
+    .upload-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .upload-group {
+        width: 100%;
+    }
+
+    .btn-upload {
+        width: 100%;
+    }
+
+    /* Audio Player */
+    .player-controls {
+        gap: var(--spacing-sm);
+    }
+
+    .control-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .control-btn-large {
+        width: 60px;
+        height: 60px;
+    }
+
+    .volume-container {
+        flex-direction: column;
+    }
+
+    .volume-slider {
+        width: 100%;
+    }
+
+    /* Playlist */
+    .playlist-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    /* Video List */
+    .video-list {
+        grid-template-columns: 1fr;
+    }
+
+    /* Events */
+    .events-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .event-filter {
+        justify-content: center;
+    }
+
+    .events-list {
+        grid-template-columns: 1fr;
+    }
+
+    /* Gallery */
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+
+    .gallery-upload-section {
+        padding: var(--spacing-sm);
+    }
+
+    .lightbox-prev, .lightbox-next {
+        padding: 15px;
+        font-size: 24px;
+    }
+
+    .lightbox-prev {
+        left: 10px;
+    }
+
+    .lightbox-next {
+        right: 10px;
+    }
+
+    .lightbox-close-gallery {
+        top: 10px;
+        right: 20px;
+        font-size: 30px;
+    }
+
+    .lightbox-info {
+        bottom: 10px;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 0.9rem;
+    }
+
+    /* Contact */
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .newsletter-box,
+    .contact-box {
+        min-width: unset;
+    }
+
+    /* Social Icons */
+    .social-icons {
+        flex-wrap: wrap;
+    }
+
+    /* Modal */
+    .modal-content {
+        width: 95%;
+        padding: var(--spacing-md);
+    }
+
+    /* Spacing */
+    .section {
+        padding: var(--spacing-lg) var(--spacing-sm);
+    }
+}
+
+/* Mobile Styles (480px and below) */
+@media (max-width: 480px) {
+    /* Typography */
+    html {
+        font-size: 12px;
+    }
+
+    /* Navigation */
+    .nav-logo {
+        font-size: 1.2rem;
+    }
+
+    /* Hero */
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+
+    /* Section Titles */
+    .section-title {
+        font-size: 1.5rem;
+    }
+
+    /* Audio Player */
+    .visualizer-container {
+        height: 100px;
+    }
+
+    .track-title {
+        font-size: 1.2rem;
+    }
+
+    /* Events */
+    .event-date {
+        font-size: 1.5rem;
+    }
+
+    .event-venue {
+        font-size: 1rem;
+    }
+
+    .event-actions {
+        flex-direction: column;
+    }
+
+    /* Gallery */
+    .gallery-item {
+        min-height: 250px;
+    }
+
+    /* Social Icons */
+    .social-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+}
+
+/* Desktop Large Screens (1024px and above) */
+@media (min-width: 1024px) {
+    /* Typography */
+    html {
+        font-size: 18px;
+    }
+
+    /* Hero */
+    .hero-title {
+        font-size: 5rem;
+    }
+
+    /* Gallery */
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+
+    /* Events */
+    .events-list {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}
+
+/* Landscape Mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .section {
+        min-height: auto;
+        padding: var(--spacing-md);
+    }
+
+    .hero-section {
+        min-height: 100vh;
+    }
+
+    .nav-menu {
+        height: auto;
+        max-height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+}
+
+/* Print Styles */
+@media print {
+    #webgl-canvas,
+    .nav-bar,
+    .scroll-indicator,
+    .upload-controls,
+    .player-controls,
+    .modal,
+    .lightbox {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+
+    .section {
+        page-break-inside: avoid;
+    }
+}
+
+/* Accessibility - Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    :root {
+        --color-light: #FFFFFF;
+        --color-background: #000000;
+    }
+
+    .nav-bar,
+    .audio-player,
+    .modal-content,
+    .event-card {
+        border-width: 3px;
+    }
+}

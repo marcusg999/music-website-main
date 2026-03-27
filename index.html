@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEAS | Music Experience</title>
+    <meta name="description" content="An immersive WebGL music experience with modern design">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <!-- WebGL Background Canvas -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Navigation -->
+    <nav id="main-nav" class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <svg class="logo-svg" width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <path d="M20 8 L28 20 L20 32 L12 20 Z" fill="currentColor"/>
+                </svg>
+                <span class="logo-text">BEAS</span>
+            </div>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu">
+                <li><a href="#hero" class="nav-link active">Home</a></li>
+                <li><a href="#featured" class="nav-link">Featured</a></li>
+                <li><a href="#bio" class="nav-link">Bio</a></li>
+                <li><a href="#events" class="nav-link">Events</a></li>
+                <li><a href="#gallery" class="nav-link">Gallery</a></li>
+                <li><a href="#instagram-feed" class="nav-link">Instagram</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+                <li><button id="admin-btn" class="btn btn-admin" onclick="authManager.showLoginModal()">Admin</button></li>
+                <li><button id="manage-users-btn" class="btn btn-manage" onclick="authManager.showUserManagementModal()" style="display: none;">Manage Users</button></li>
+                <li><button id="logout-btn" class="btn btn-logout" onclick="authManager.logout()" style="display: none;">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="section hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="glyph-accent">◈</span>
+                BEAS
+                <span class="glyph-accent">◈</span>
+            </h1>
+            <p class="hero-subtitle">An Ancient Sound for Modern Times</p>
+            <div class="hero-actions">
+                <button class="btn btn-primary" onclick="scrollToSection('featured')">
+                    Explore Music
+                </button>
+                <button class="btn btn-secondary" onclick="scrollToSection('events')">
+                    Upcoming Shows
+                </button>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <span class="glyph-icon">▼</span>
+        </div>
+    </section>
+
+    <!-- Featured Media Section -->
+    <section id="featured" class="section featured-section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="glyph-icon">♫</span>
+                Featured Media
+            </h2>
+            
+            <!-- Media Upload Controls -->
+            <div class="upload-controls">
+                <div class="upload-group">
+                    <label for="audio-upload" class="btn btn-upload">
+                        <span class="glyph-icon">↑</span> Upload Audio (MP3)
+                    </label>
+                    <input type="file" id="audio-upload" accept="audio/mp3,audio/mpeg" multiple hidden>
+                </div>
+                <div class="upload-group">
+                    <label for="video-upload" class="btn btn-upload">
+                        <span class="glyph-icon">↑</span> Upload Video (MP4)
+                    </label>
+                    <input type="file" id="video-upload" accept="video/mp4" multiple hidden>
+                </div>
+            </div>
+
+            <!-- Audio Player -->
+            <div class="media-player-container">
+                <div class="audio-player" id="audio-player">
+                    <div class="player-header">
+                        <div class="track-info">
+                            <h3 class="track-title" id="track-title">No track selected</h3>
+                            <p class="track-artist" id="track-artist">Select a track to play</p>
+                        </div>
+                    </div>
+                    <div class="visualizer-container">
+                        <canvas id="audio-visualizer"></canvas>
+                    </div>
+                    <div class="player-controls">
+                        <button class="control-btn" id="prev-btn" aria-label="Previous track">
+                            <span class="glyph-icon">◀</span>
+                        </button>
+                        <button class="control-btn control-btn-large" id="play-pause-btn" aria-label="Play/Pause">
+                            <span class="glyph-icon">▶</span>
+                        </button>
+                        <button class="control-btn" id="next-btn" aria-label="Next track">
+                            <span class="glyph-icon">▶</span>
+                        </button>
+                    </div>
+                    <div class="progress-container">
+                        <span class="time-display" id="current-time">0:00</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                            <input type="range" class="progress-slider" id="progress-slider" min="0" max="100" value="0">
+                        </div>
+                        <span class="time-display" id="duration-time">0:00</span>
+                    </div>
+                    <div class="volume-container">
+                        <span class="glyph-icon">♪</span>
+                        <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="70">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playlist -->
+            <div class="playlist-section">
+                <h3 class="playlist-title">
+                    <span class="glyph-icon">≡</span> Playlist
+                </h3>
+                <div id="playlist" class="playlist"></div>
+            </div>
+
+            <!-- Video Player -->
+            <div class="video-player-container">
+                <h3 class="video-section-title">
+                    <span class="glyph-icon">▣</span> Featured Videos
+                </h3>
+                <video id="video-player" class="video-player" controls></video>
+                <div id="video-list" class="video-list"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bio Section -->
+    <section id="bio" class="section bio-section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="glyph-icon">☉</span>
+                About
+            </h2>
+            <div class="bio-content">
+                <div class="bio-image">
+                    <div class="image-placeholder">
+                        <span class="glyph-icon large-glyph">◈</span>
+                    </div>
+                </div>
+                <div class="bio-text" id="bio-text">
+                    <h3>The Legend of BEAS</h3>
+                    <p>Born from the ancient echoes of earth and fire, BEAS merges the primal rhythms of rock with the mystical essence of Mayan heritage. Our sound is carved from stone and forged in flame, creating an immersive sonic experience that transcends time.</p>
+                    <p>Drawing inspiration from ancient glyphs and modern intensity, we craft music that resonates with the soul of the earth. Each performance is a ritual, each song a journey through forgotten temples and modern soundscapes.</p>
+                    <p>Click to edit this bio and make it your own.</p>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="save-bio-btn">Save Bio</button>
+        </div>
+    </section>
+
+    <!-- Events Section -->
+    <section id="events" class="section events-section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="glyph-icon">◐</span>
+                Upcoming Appearances
+            </h2>
+            
+            <div class="events-controls">
+                <button class="btn btn-secondary" id="add-event-btn">Add Event</button>
+                <div class="event-filter">
+                    <button class="filter-btn active" data-filter="upcoming">Upcoming</button>
+                    <button class="filter-btn" data-filter="past">Past</button>
+                    <button class="filter-btn" data-filter="all">All</button>
+                </div>
+            </div>
+
+            <div id="events-list" class="events-list"></div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="section gallery-section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="glyph-icon">⬚</span>
+                Gallery
+            </h2>
+            
+            <!-- Admin Upload Controls (hidden by default) -->
+            <div id="galleryUploadControls" class="gallery-upload-section" style="display: none;">
+                <h3 class="upload-section-title">Upload Images</h3>
+                <div class="upload-group">
+                    <input type="file" id="imageUpload" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple hidden>
+                    <label for="imageUpload" class="btn btn-upload">
+                        <span class="glyph-icon">↑</span> Choose Images
+                    </label>
+                    <button id="uploadImageBtn" class="btn btn-primary">Upload Images</button>
+                </div>
+                <div id="imageUploadStatus" class="upload-status"></div>
+            </div>
+            
+            <!-- Gallery Grid -->
+            <div class="gallery-grid" id="galleryGrid">
+                <!-- Images will be dynamically inserted here -->
+            </div>
+            
+            <!-- Empty State -->
+            <div id="galleryEmpty" class="gallery-empty" style="display: none;">
+                <p>No images in gallery yet.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Instagram Feed Section -->
+    <section id="instagram-feed" class="section instagram-section">
+        <div class="container">
+            <h2 class="section-title">
+                <svg class="instagram-icon" width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/>
+                    <path d="M12 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                Follow Us on Instagram
+            </h2>
+            
+            <!-- Instagram Handle -->
+            <p class="instagram-handle">
+                <a href="https://instagram.com/beas" target="_blank" rel="noopener">@beas</a>
+            </p>
+            
+            <!-- Instagram Feed Container -->
+            <div id="instagramFeedContainer" class="instagram-feed-grid">
+                <!-- Posts will be loaded here -->
+            </div>
+            
+            <!-- Loading State -->
+            <div id="instagramLoading" class="instagram-loading">
+                <div class="loader"></div>
+                <p>Loading Instagram feed...</p>
+            </div>
+            
+            <!-- Error State -->
+            <div id="instagramError" class="instagram-error" style="display: none;">
+                <p>Unable to load Instagram feed.</p>
+            </div>
+            
+            <!-- CTA Button -->
+            <div class="instagram-cta">
+                <a href="https://instagram.com/beas" target="_blank" rel="noopener" class="btn btn-primary">
+                    Follow on Instagram
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact & Newsletter Section -->
+    <section id="contact" class="section contact-section">
+        <div class="container">
+            <div class="contact-grid">
+                <!-- Newsletter -->
+                <div class="newsletter-box">
+                    <h3 class="subsection-title">
+                        <span class="glyph-icon">✉</span>
+                        Join Our Journey
+                    </h3>
+                    <p>Subscribe to receive updates on new releases, tours, and exclusive content.</p>
+                    <form id="newsletter-form" class="form">
+                        <div class="form-group">
+                            <input type="email" id="newsletter-email" class="form-input" placeholder="Your email" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Subscribe</button>
+                    </form>
+                    <div id="newsletter-message" class="form-message"></div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="contact-box">
+                    <h3 class="subsection-title">
+                        <span class="glyph-icon">◈</span>
+                        Get In Touch
+                    </h3>
+                    <form id="contact-form" class="form">
+                        <div class="form-group">
+                            <input type="text" id="contact-name" class="form-input" placeholder="Name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="contact-email" class="form-input" placeholder="Email" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="contact-message" class="form-textarea" placeholder="Message" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </form>
+                    <div id="contact-message-status" class="form-message"></div>
+                </div>
+            </div>
+
+            <!-- Social Media Links -->
+            <div class="social-links">
+                <h3 class="subsection-title">Connect With Us</h3>
+                <div class="social-icons">
+                    <a href="https://spotify.com" target="_blank" class="social-icon" aria-label="Spotify">
+                        <span class="glyph-icon">♫</span>
+                    </a>
+                    <a href="https://youtube.com" target="_blank" class="social-icon" aria-label="YouTube">
+                        <span class="glyph-icon">▶</span>
+                    </a>
+                    <a href="https://instagram.com" target="_blank" class="social-icon" aria-label="Instagram">
+                        <span class="glyph-icon">◈</span>
+                    </a>
+                    <a href="https://facebook.com" target="_blank" class="social-icon" aria-label="Facebook">
+                        <span class="glyph-icon">◐</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 BEAS. Powered by ancient energy and modern technology.</p>
+            <p class="glyph-pattern">◈ ☉ ◐ ⬚ ◈</p>
+        </div>
+    </footer>
+
+    <!-- Event Modal -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h3 class="modal-title">Add Event</h3>
+            <form id="event-form" class="form">
+                <div class="form-group">
+                    <label for="event-date">Date</label>
+                    <input type="date" id="event-date" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="event-venue">Venue</label>
+                    <input type="text" id="event-venue" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="event-location">Location</label>
+                    <input type="text" id="event-location" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="event-ticket-link">Ticket Link (optional)</label>
+                    <input type="url" id="event-ticket-link" class="form-input">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Event</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-login-modal" class="modal">
+        <div class="modal-content admin-modal">
+            <span class="modal-close" onclick="authManager.hideLoginModal()">&times;</span>
+            <h3 class="modal-title">
+                <span class="glyph-icon">◈</span>
+                Admin Login
+            </h3>
+            <p class="admin-subtitle">Enter your credentials to access admin features</p>
+            <form id="admin-login-form" class="form" onsubmit="authManager.handleLoginSubmit(event)">
+                <div class="form-group">
+                    <label for="admin-username">Username</label>
+                    <input type="text" id="admin-username" class="form-input" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Password</label>
+                    <input type="password" id="admin-password" class="form-input" required autocomplete="current-password">
+                </div>
+                <div id="login-error" class="form-message error" style="display: none;"></div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+            <div class="admin-info">
+                <p class="info-text"><strong>Demo Credentials:</strong></p>
+                <p class="info-text">Username: <code>admin</code></p>
+                <p class="info-text">Password: <code>beas2026</code></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Modal -->
+    <div id="user-management-modal" class="modal">
+        <div class="modal-content user-management-modal">
+            <span class="modal-close" onclick="authManager.hideUserManagementModal()">&times;</span>
+            <h3 class="modal-title">
+                <span class="glyph-icon">◈</span>
+                User Management
+            </h3>
+            <p class="admin-subtitle">Add and manage admin users</p>
+            
+            <!-- Add User Form -->
+            <div class="user-management-section">
+                <h4 class="section-subtitle">Add New User</h4>
+                <form id="add-user-form" class="form" onsubmit="authManager.handleAddUserSubmit(event)">
+                    <div class="form-group">
+                        <label for="new-username">Username</label>
+                        <input type="text" id="new-username" class="form-input" required minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password">Password</label>
+                        <input type="password" id="new-password" class="form-input" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">Confirm Password</label>
+                        <input type="password" id="confirm-password" class="form-input" required minlength="6">
+                    </div>
+                    <div id="add-user-error" class="form-message error" style="display: none;"></div>
+                    <div id="add-user-success" class="form-message success" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                </form>
+            </div>
+
+            <!-- User List -->
+            <div class="user-management-section">
+                <h4 class="section-subtitle">Existing Users</h4>
+                <div id="user-list" class="user-list">
+                    <!-- Users will be dynamically populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div id="imageLightbox" class="lightbox-modal" style="display: none;">
+        <span class="lightbox-close-gallery">&times;</span>
+        <button class="lightbox-prev">&#10094;</button>
+        <button class="lightbox-next">&#10095;</button>
+        <img id="lightboxImage" class="lightbox-image" src="" alt="">
+        <div class="lightbox-info">
+            <p id="lightboxFilename"></p>
+            <p id="lightboxDate"></p>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightbox-img" class="lightbox-content" alt="Gallery image">
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/webgl-scene.js"></script>
+    <script src="js/audio-player.js"></script>
+    <script src="js/media-upload.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/instagram-config.js"></script>
+    <script src="js/instagram-feed.js"></script>
+    <script src="js/gallery.js"></script>
+    
+    <!-- Email Configuration and Contact Form Handler -->
+    <script src="js/email-config.js"></script>
+    <script src="js/contact-form.js"></script>
+    
+    <script src="js/main.js"></script>
+</body>
+</html>
