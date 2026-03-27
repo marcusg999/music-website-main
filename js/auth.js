@@ -128,6 +128,10 @@ class AuthManager {
         return this.isAuthenticated;
     }
 
+    isLoggedIn() {
+        return this.isAuthenticated;
+    }
+
     login(username, password) {
         const user = this.getUsers().find(u => u.username === username && u.password === password);
         if (user) {

@@ -14,14 +14,20 @@ class MediaUploadManager {
     }
 
     init() {
-        // Audio upload handler
-        this.audioUpload.addEventListener('change', (e) => this.handleAudioUpload(e));
-        
+        // Audio upload handler (may not exist if transmissions.js handles it)
+        if (this.audioUpload) {
+            this.audioUpload.addEventListener('change', (e) => this.handleAudioUpload(e));
+        }
+
         // Video upload handler
-        this.videoUpload.addEventListener('change', (e) => this.handleVideoUpload(e));
+        if (this.videoUpload) {
+            this.videoUpload.addEventListener('change', (e) => this.handleVideoUpload(e));
+        }
 
         // Load existing videos
-        this.loadVideosFromStorage();
+        if (this.videoPlayer && this.videoList) {
+            this.loadVideosFromStorage();
+        }
     }
 
     async handleAudioUpload(event) {
@@ -121,6 +127,7 @@ class MediaUploadManager {
     }
 
     renderVideoList() {
+        if (!this.videoList || !this.videoPlayer) return;
         this.videoList.innerHTML = '';
 
         if (this.videos.length === 0) {

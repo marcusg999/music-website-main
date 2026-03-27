@@ -125,38 +125,7 @@ class SiteController {
             });
         }
 
-        const contactForm = document.getElementById('contact-form');
-        if (contactForm) {
-            contactForm.addEventListener('submit', e => {
-                e.preventDefault();
-                const name    = document.getElementById('contact-name').value.trim();
-                const email   = document.getElementById('contact-email').value.trim();
-                const message = document.getElementById('contact-message').value.trim();
-
-                if (!name || !this._validEmail(email) || !message) {
-                    this._setFormStatus('contact-message-status', 'All fields required.', 'error');
-                    return;
-                }
-
-                try {
-                    const msgs = JSON.parse(localStorage.getItem('contacts') || '[]');
-                    msgs.push({ name, email, message, date: new Date().toISOString() });
-                    localStorage.setItem('contacts', JSON.stringify(msgs));
-                } catch (e) { /* pass */ }
-
-                // Try EmailJS if configured
-                if (window.emailjs && window.emailConfig) {
-                    emailjs.send(emailConfig.serviceId, emailConfig.templateId, {
-                        from_name: name,
-                        from_email: email,
-                        message,
-                    }).catch(() => {});
-                }
-
-                this._setFormStatus('contact-message-status', 'Transmission sent.', 'success');
-                contactForm.reset();
-            });
-        }
+        // Contact form is handled by contact-form.js (EmailJS)
     }
 
     _validEmail(email) {
