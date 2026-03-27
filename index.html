@@ -155,6 +155,17 @@
                 <canvas id="audio-visualizer" class="np-visualizer" width="80" height="32"></canvas>
             </div>
 
+            <!-- Admin: Add Track -->
+            <div class="admin-bar" id="transmission-admin-bar" style="display:none">
+                <button class="btn-admin-action" onclick="transmissionsManager.showAddTrackModal()">
+                    + ADD TRANSMISSION
+                </button>
+                <label class="btn-admin-action" for="audio-upload-hidden">
+                    ↑ UPLOAD AUDIO
+                </label>
+                <input type="file" id="audio-upload-hidden" accept="audio/mp3,audio/mpeg" multiple hidden>
+            </div>
+
             <!-- Filter Tabs -->
             <div class="transmission-filters">
                 <button class="t-filter active" data-filter="all">ALL</button>
@@ -170,17 +181,6 @@
 
             <div class="catalog-empty" id="catalog-empty" style="display:none">
                 <span class="mono-label">NO TRANSMISSIONS FOUND — SIGNAL PENDING</span>
-            </div>
-
-            <!-- Admin: Add Track -->
-            <div class="admin-bar" id="transmission-admin-bar" style="display:none">
-                <button class="btn-admin-action" onclick="transmissionsManager.showAddTrackModal()">
-                    + ADD TRANSMISSION
-                </button>
-                <label class="btn-admin-action" for="audio-upload-hidden">
-                    ↑ UPLOAD MP3
-                </label>
-                <input type="file" id="audio-upload-hidden" accept="audio/mp3,audio/mpeg" multiple hidden>
             </div>
         </div>
     </section>
