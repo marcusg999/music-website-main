@@ -20,9 +20,9 @@
     --grid-line:    rgba(255, 255, 255, 0.04);
 
     /* Fonts */
-    --font-display: 'Space Grotesk', 'Arial Black', sans-serif;
-    --font-mono:    'Space Mono', 'Courier New', monospace;
-    --font-body:    'Space Grotesk', 'Arial', sans-serif;
+    --font-display: 'IBM Plex Mono', 'Courier New', monospace;
+    --font-mono:    'IBM Plex Mono', 'Courier New', monospace;
+    --font-body:    'IBM Plex Mono', 'Courier New', monospace;
 
     /* Sizes */
     --nav-h:        56px;
@@ -453,7 +453,7 @@ img { display: block; max-width: 100%; }
 
 .glitch-text {
     display: block;
-    font-family: var(--font-display);
+    font-family: 'Space Grotesk', 'Arial Black', sans-serif;
     font-size: clamp(5rem, 18vw, 14rem);
     font-weight: 900;
     letter-spacing: -0.02em;
@@ -469,7 +469,7 @@ img { display: block; max-width: 100%; }
     position: absolute;
     inset: 0;
     color: var(--text);
-    font-family: var(--font-display);
+    font-family: 'Space Grotesk', 'Arial Black', sans-serif;
     font-size: inherit;
     font-weight: inherit;
 }
