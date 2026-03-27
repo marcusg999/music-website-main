@@ -3,475 +3,647 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BEAS | Music Experience</title>
-    <meta name="description" content="An immersive WebGL music experience with modern design">
+    <title>3EAS | SYSTEM</title>
+    <meta name="description" content="3EAS — Transmissions, Visuals, Acquisitions, Signal, Access">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
     <!-- WebGL Background Canvas -->
     <canvas id="webgl-canvas"></canvas>
+    <!-- Blueprint Grid Overlay -->
+    <div class="grid-overlay" aria-hidden="true"></div>
 
-    <!-- Navigation -->
+    <!-- ═══ NAVIGATION ═══ -->
     <nav id="main-nav" class="nav-bar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <svg class="logo-svg" width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2"/>
-                    <path d="M20 8 L28 20 L20 32 L12 20 Z" fill="currentColor"/>
-                </svg>
-                <span class="logo-text">BEAS</span>
+        <div class="nav-inner">
+            <div class="nav-brand">
+                <span class="nav-system">SYSTEM</span>
+                <span class="nav-brand-line" aria-hidden="true"></span>
             </div>
-            <button class="mobile-menu-toggle" aria-label="Toggle menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <ul class="nav-menu">
-                <li><a href="#hero" class="nav-link active">Home</a></li>
-                <li><a href="#featured" class="nav-link">Featured</a></li>
-                <li><a href="#bio" class="nav-link">Bio</a></li>
-                <li><a href="#events" class="nav-link">Events</a></li>
-                <li><a href="#gallery" class="nav-link">Gallery</a></li>
-                <li><a href="#instagram-feed" class="nav-link">Instagram</a></li>
-                <li><a href="#contact" class="nav-link">Contact</a></li>
-                <li><button id="admin-btn" class="btn btn-admin" onclick="authManager.showLoginModal()">Admin</button></li>
-                <li><button id="manage-users-btn" class="btn btn-manage" onclick="authManager.showUserManagementModal()" style="display: none;">Manage Users</button></li>
-                <li><button id="logout-btn" class="btn btn-logout" onclick="authManager.logout()" style="display: none;">Logout</button></li>
+            <ul class="nav-menu" id="nav-menu">
+                <li class="nav-item" data-section="transmissions" id="nav-item-transmissions">
+                    <a href="#transmissions" class="nav-link">
+                        <span class="nav-bullet" aria-hidden="true">•</span>
+                        TRANSMISSIONS
+                    </a>
+                </li>
+                <li class="nav-item" data-section="visuals" id="nav-item-visuals">
+                    <a href="#visuals" class="nav-link">
+                        <span class="nav-bullet" aria-hidden="true">•</span>
+                        VISUALS
+                    </a>
+                </li>
+                <li class="nav-item" data-section="acquisitions" id="nav-item-acquisitions">
+                    <a href="#acquisitions" class="nav-link">
+                        <span class="nav-bullet" aria-hidden="true">•</span>
+                        ACQUISITIONS
+                    </a>
+                </li>
+                <li class="nav-item" data-section="signal" id="nav-item-signal">
+                    <a href="#signal" class="nav-link">
+                        <span class="nav-bullet" aria-hidden="true">•</span>
+                        SIGNAL
+                    </a>
+                </li>
+                <li class="nav-item" data-section="access" id="nav-item-access">
+                    <a href="#access" class="nav-link">
+                        <span class="nav-bullet" aria-hidden="true">•</span>
+                        ACCESS
+                    </a>
+                </li>
             </ul>
+            <div class="nav-controls">
+                <button id="admin-btn" class="btn-nav-admin" onclick="authManager.showLoginModal()">⬡ ADMIN</button>
+                <button id="manage-btn" class="btn-nav-manage" onclick="authManager.showAdminPanel()" style="display:none">⬡ PANEL</button>
+                <button id="logout-btn" class="btn-nav-logout" onclick="authManager.logout()" style="display:none">LOGOUT</button>
+            </div>
+            <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section id="hero" class="section hero-section">
+    <!-- Mobile Nav Overlay -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+        <button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button>
+        <div class="mobile-nav-brand">
+            <span class="nav-system">SYSTEM</span>
+        </div>
+        <ul class="mobile-nav-menu">
+            <li data-section="transmissions" id="mobile-item-transmissions"><a href="#transmissions" class="mobile-nav-link"><span>•</span> TRANSMISSIONS</a></li>
+            <li data-section="visuals" id="mobile-item-visuals"><a href="#visuals" class="mobile-nav-link"><span>•</span> VISUALS</a></li>
+            <li data-section="acquisitions" id="mobile-item-acquisitions"><a href="#acquisitions" class="mobile-nav-link"><span>•</span> ACQUISITIONS</a></li>
+            <li data-section="signal" id="mobile-item-signal"><a href="#signal" class="mobile-nav-link"><span>•</span> SIGNAL</a></li>
+            <li data-section="access" id="mobile-item-access"><a href="#access" class="mobile-nav-link"><span>•</span> ACCESS</a></li>
+        </ul>
+        <div class="mobile-nav-footer">
+            <span class="mono-label">8Y8.4IK RECORDINGS</span>
+        </div>
+    </div>
+
+    <!-- ═══ HERO ═══ -->
+    <section id="hero" class="hero-section">
+        <div class="hero-tech-grid" aria-hidden="true">
+            <div class="tech-line tech-line-v"></div>
+            <div class="tech-line tech-line-h"></div>
+            <div class="tech-crosshair tech-crosshair-top"></div>
+            <div class="tech-crosshair tech-crosshair-mid"></div>
+            <div class="tech-crosshair tech-crosshair-bot"></div>
+            <div class="tech-bracket tech-bracket-tr"></div>
+            <div class="tech-bracket tech-bracket-br"></div>
+            <div class="tech-hazard" aria-hidden="true"></div>
+        </div>
         <div class="hero-content">
-            <h1 class="hero-title">
-                <span class="glyph-accent">◈</span>
-                BEAS
-                <span class="glyph-accent">◈</span>
+            <div class="hero-coords-top mono-label" aria-hidden="true">
+                Bay.Day.09.3BK&nbsp;&nbsp;2ef 31A.381.(3d:65.001)
+            </div>
+            <h1 class="hero-title" id="hero-title">
+                <span class="glitch-text" data-text="3EAS">3EAS</span>
             </h1>
-            <p class="hero-subtitle">An Ancient Sound for Modern Times</p>
-            <div class="hero-actions">
-                <button class="btn btn-primary" onclick="scrollToSection('featured')">
-                    Explore Music
-                </button>
-                <button class="btn btn-secondary" onclick="scrollToSection('events')">
-                    Upcoming Shows
-                </button>
+            <div class="hero-meta">
+                <span class="hero-scroll-hint mono-label">SCROLL TO ENTER SYSTEM ↓</span>
             </div>
         </div>
-        <div class="scroll-indicator">
-            <span class="glyph-icon">▼</span>
+        <div class="hero-corners" aria-hidden="true">
+            <span class="corner-label corner-bl mono-label">8Y8.4IK RECORDINGS</span>
+            <span class="corner-label corner-br mono-label">45—</span>
         </div>
     </section>
 
-    <!-- Featured Media Section -->
-    <section id="featured" class="section featured-section">
-        <div class="container">
-            <h2 class="section-title">
-                <span class="glyph-icon">♫</span>
-                Featured Media
-            </h2>
-            
-            <!-- Media Upload Controls -->
-            <div class="upload-controls">
-                <div class="upload-group">
-                    <label for="audio-upload" class="btn btn-upload">
-                        <span class="glyph-icon">↑</span> Upload Audio (MP3)
-                    </label>
-                    <input type="file" id="audio-upload" accept="audio/mp3,audio/mpeg" multiple hidden>
+    <!-- ═══ 01 — TRANSMISSIONS ═══ -->
+    <section id="transmissions" class="site-section">
+        <div class="section-container">
+            <header class="section-header">
+                <div class="section-number mono-label">01</div>
+                <h2 class="section-title">TRANSMISSIONS</h2>
+                <p class="section-descriptor mono-label">ALL SOUND OUTPUT</p>
+                <div class="section-rule" aria-hidden="true"></div>
+            </header>
+
+            <!-- Now Playing Bar -->
+            <div class="now-playing-bar" id="now-playing-bar">
+                <div class="np-signal-indicator" aria-hidden="true">
+                    <span class="signal-dot"></span>
+                    <span class="signal-dot"></span>
+                    <span class="signal-dot"></span>
                 </div>
-                <div class="upload-group">
-                    <label for="video-upload" class="btn btn-upload">
-                        <span class="glyph-icon">↑</span> Upload Video (MP4)
-                    </label>
+                <div class="np-info">
+                    <span class="np-label mono-label">NOW PLAYING</span>
+                    <span class="np-title" id="np-title">— SELECT A TRANSMISSION —</span>
+                </div>
+                <div class="np-controls">
+                    <button class="np-btn" id="np-prev" aria-label="Previous">◀◀</button>
+                    <button class="np-btn np-play" id="np-play" aria-label="Play/Pause">▶</button>
+                    <button class="np-btn" id="np-next" aria-label="Next">▶▶</button>
+                </div>
+                <div class="np-progress-wrap">
+                    <span class="np-time mono-label" id="np-current">0:00</span>
+                    <div class="np-progress" id="np-progress-bar">
+                        <div class="np-progress-fill" id="np-progress-fill"></div>
+                        <input type="range" class="np-scrubber" id="np-scrubber" min="0" max="100" value="0">
+                    </div>
+                    <span class="np-time mono-label" id="np-duration">0:00</span>
+                </div>
+                <div class="np-volume">
+                    <span class="mono-label" aria-hidden="true">VOL</span>
+                    <input type="range" id="np-volume" min="0" max="100" value="70" aria-label="Volume">
+                </div>
+                <canvas id="audio-visualizer" class="np-visualizer" width="80" height="32"></canvas>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="transmission-filters">
+                <button class="t-filter active" data-filter="all">ALL</button>
+                <button class="t-filter" data-filter="release">RELEASES</button>
+                <button class="t-filter" data-filter="mix">DJ MIXES</button>
+                <button class="t-filter" data-filter="exclusive">EXCLUSIVE</button>
+            </div>
+
+            <!-- Track Catalog -->
+            <div class="transmission-catalog" id="transmission-catalog">
+                <!-- Rendered by transmissions.js -->
+            </div>
+
+            <div class="catalog-empty" id="catalog-empty" style="display:none">
+                <span class="mono-label">NO TRANSMISSIONS FOUND — SIGNAL PENDING</span>
+            </div>
+
+            <!-- Admin: Add Track -->
+            <div class="admin-bar" id="transmission-admin-bar" style="display:none">
+                <button class="btn-admin-action" onclick="transmissionsManager.showAddTrackModal()">
+                    + ADD TRANSMISSION
+                </button>
+                <label class="btn-admin-action" for="audio-upload-hidden">
+                    ↑ UPLOAD MP3
+                </label>
+                <input type="file" id="audio-upload-hidden" accept="audio/mp3,audio/mpeg" multiple hidden>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ 02 — VISUALS ═══ -->
+    <section id="visuals" class="site-section">
+        <div class="section-container">
+            <header class="section-header">
+                <div class="section-number mono-label">02</div>
+                <h2 class="section-title">VISUALS</h2>
+                <p class="section-descriptor mono-label">ALL VISUAL OUTPUT</p>
+                <div class="section-rule" aria-hidden="true"></div>
+            </header>
+
+            <!-- Gallery Upload (admin) -->
+            <div id="gallery-upload-controls" class="admin-bar" style="display:none">
+                <input type="file" id="imageUpload" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple hidden>
+                <label for="imageUpload" class="btn-admin-action">↑ UPLOAD IMAGES</label>
+                <button id="uploadImageBtn" class="btn-admin-action">CONFIRM UPLOAD</button>
+                <div id="imageUploadStatus" class="upload-status-bar"></div>
+            </div>
+
+            <!-- Visual Tabs -->
+            <div class="transmission-filters">
+                <button class="t-filter active" data-visual-filter="photos">PHOTOS</button>
+                <button class="t-filter" data-visual-filter="video">VIDEO</button>
+            </div>
+
+            <!-- Gallery Grid -->
+            <div class="visuals-grid" id="galleryGrid"><!-- gallery.js renders here --></div>
+            <div id="galleryEmpty" class="catalog-empty" style="display:none">
+                <span class="mono-label">NO VISUALS ARCHIVED — SIGNAL PENDING</span>
+            </div>
+
+            <!-- Video Section -->
+            <div class="video-section" id="video-section" style="display:none">
+                <video id="video-player" class="video-player" controls></video>
+                <div id="video-list" class="video-list"></div>
+                <div class="admin-bar" id="video-upload-controls" style="display:none">
+                    <label for="video-upload" class="btn-admin-action">↑ UPLOAD VIDEO (MP4)</label>
                     <input type="file" id="video-upload" accept="video/mp4" multiple hidden>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- Audio Player -->
-            <div class="media-player-container">
-                <div class="audio-player" id="audio-player">
-                    <div class="player-header">
-                        <div class="track-info">
-                            <h3 class="track-title" id="track-title">No track selected</h3>
-                            <p class="track-artist" id="track-artist">Select a track to play</p>
-                        </div>
-                    </div>
-                    <div class="visualizer-container">
-                        <canvas id="audio-visualizer"></canvas>
-                    </div>
-                    <div class="player-controls">
-                        <button class="control-btn" id="prev-btn" aria-label="Previous track">
-                            <span class="glyph-icon">◀</span>
-                        </button>
-                        <button class="control-btn control-btn-large" id="play-pause-btn" aria-label="Play/Pause">
-                            <span class="glyph-icon">▶</span>
-                        </button>
-                        <button class="control-btn" id="next-btn" aria-label="Next track">
-                            <span class="glyph-icon">▶</span>
-                        </button>
-                    </div>
-                    <div class="progress-container">
-                        <span class="time-display" id="current-time">0:00</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progress-fill"></div>
-                            <input type="range" class="progress-slider" id="progress-slider" min="0" max="100" value="0">
-                        </div>
-                        <span class="time-display" id="duration-time">0:00</span>
-                    </div>
-                    <div class="volume-container">
-                        <span class="glyph-icon">♪</span>
-                        <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="70">
-                    </div>
+    <!-- ═══ 03 — ACQUISITIONS ═══ -->
+    <section id="acquisitions" class="site-section">
+        <div class="section-container">
+            <header class="section-header">
+                <div class="section-number mono-label">03</div>
+                <h2 class="section-title">ACQUISITIONS</h2>
+                <p class="section-descriptor mono-label">ALL COMMERCE — OBTAIN ARTIFACTS</p>
+                <div class="section-rule" aria-hidden="true"></div>
+            </header>
+
+            <div class="acquisitions-grid" id="acquisitions-grid">
+                <!-- Static placeholder items — admin can edit via SIGNAL/links -->
+                <div class="acquisition-card">
+                    <div class="acq-label mono-label">MERCH</div>
+                    <h3 class="acq-title">CDK COLLECTION</h3>
+                    <p class="acq-desc">Apparel & accessories — the uniform of the signal.</p>
+                    <a href="#access" class="btn-acquire">INQUIRE →</a>
                 </div>
-            </div>
-
-            <!-- Playlist -->
-            <div class="playlist-section">
-                <h3 class="playlist-title">
-                    <span class="glyph-icon">≡</span> Playlist
-                </h3>
-                <div id="playlist" class="playlist"></div>
-            </div>
-
-            <!-- Video Player -->
-            <div class="video-player-container">
-                <h3 class="video-section-title">
-                    <span class="glyph-icon">▣</span> Featured Videos
-                </h3>
-                <video id="video-player" class="video-player" controls></video>
-                <div id="video-list" class="video-list"></div>
+                <div class="acquisition-card">
+                    <div class="acq-label mono-label">PHYSICAL MEDIA</div>
+                    <h3 class="acq-title">VINYL / TAPES</h3>
+                    <p class="acq-desc">Physical artifacts — limited pressings. Coming soon.</p>
+                    <span class="btn-acquire btn-acquire--soon">INCOMING —</span>
+                </div>
+                <div class="acquisition-card">
+                    <div class="acq-label mono-label">SOUND KITS</div>
+                    <h3 class="acq-title">SAMPLE PACKS</h3>
+                    <p class="acq-desc">Raw material. Acquire the source signal.</p>
+                    <a href="#transmissions" class="btn-acquire">VIEW TRANSMISSIONS →</a>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Bio Section -->
-    <section id="bio" class="section bio-section">
-        <div class="container">
-            <h2 class="section-title">
-                <span class="glyph-icon">☉</span>
-                About
-            </h2>
-            <div class="bio-content">
-                <div class="bio-image">
-                    <div class="image-placeholder">
-                        <span class="glyph-icon large-glyph">◈</span>
-                    </div>
-                </div>
-                <div class="bio-text" id="bio-text">
-                    <h3>The Legend of BEAS</h3>
-                    <p>Born from the ancient echoes of earth and fire, BEAS merges the primal rhythms of rock with the mystical essence of Mayan heritage. Our sound is carved from stone and forged in flame, creating an immersive sonic experience that transcends time.</p>
-                    <p>Drawing inspiration from ancient glyphs and modern intensity, we craft music that resonates with the soul of the earth. Each performance is a ritual, each song a journey through forgotten temples and modern soundscapes.</p>
-                    <p>Click to edit this bio and make it your own.</p>
-                </div>
-            </div>
-            <button class="btn btn-primary" id="save-bio-btn">Save Bio</button>
-        </div>
-    </section>
+    <!-- ═══ 04 — SIGNAL ═══ -->
+    <section id="signal" class="site-section">
+        <div class="section-container">
+            <header class="section-header">
+                <div class="section-number mono-label">04</div>
+                <h2 class="section-title">SIGNAL</h2>
+                <p class="section-descriptor mono-label">THOUGHTS / TRANSMISSIONS / WRITING</p>
+                <div class="section-rule" aria-hidden="true"></div>
+            </header>
 
-    <!-- Events Section -->
-    <section id="events" class="section events-section">
-        <div class="container">
-            <h2 class="section-title">
-                <span class="glyph-icon">◐</span>
-                Upcoming Appearances
-            </h2>
-            
-            <div class="events-controls">
-                <button class="btn btn-secondary" id="add-event-btn">Add Event</button>
-                <div class="event-filter">
-                    <button class="filter-btn active" data-filter="upcoming">Upcoming</button>
-                    <button class="filter-btn" data-filter="past">Past</button>
-                    <button class="filter-btn" data-filter="all">All</button>
+            <!-- Bio / Manifesto -->
+            <div class="signal-manifesto">
+                <div class="manifesto-label mono-label">// MANIFESTO</div>
+                <div class="bio-text" id="bio-text" contenteditable="false">
+                    <p>3EAS is a broadcast. Not a band. Not a brand. A signal.</p>
+                    <p>All sound output routes through TRANSMISSIONS. Visual evidence lives in VISUALS. Physical artifacts can be obtained through ACQUISITIONS. This page — SIGNAL — is where the frequency becomes language.</p>
+                    <p>Click to edit this manifesto.</p>
                 </div>
+                <button class="btn-signal-save" id="save-bio-btn" style="display:none">SAVE SIGNAL</button>
             </div>
 
-            <div id="events-list" class="events-list"></div>
-        </div>
-    </section>
+            <!-- Posts / Updates -->
+            <div class="signal-posts" id="signal-posts">
+                <!-- Future: blog posts rendered here -->
+            </div>
 
-    <!-- Gallery Section -->
-    <section id="gallery" class="section gallery-section">
-        <div class="container">
-            <h2 class="section-title">
-                <span class="glyph-icon">⬚</span>
-                Gallery
-            </h2>
-            
-            <!-- Admin Upload Controls (hidden by default) -->
-            <div id="galleryUploadControls" class="gallery-upload-section" style="display: none;">
-                <h3 class="upload-section-title">Upload Images</h3>
-                <div class="upload-group">
-                    <input type="file" id="imageUpload" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple hidden>
-                    <label for="imageUpload" class="btn btn-upload">
-                        <span class="glyph-icon">↑</span> Choose Images
-                    </label>
-                    <button id="uploadImageBtn" class="btn btn-primary">Upload Images</button>
-                </div>
-                <div id="imageUploadStatus" class="upload-status"></div>
-            </div>
-            
-            <!-- Gallery Grid -->
-            <div class="gallery-grid" id="galleryGrid">
-                <!-- Images will be dynamically inserted here -->
-            </div>
-            
-            <!-- Empty State -->
-            <div id="galleryEmpty" class="gallery-empty" style="display: none;">
-                <p>No images in gallery yet.</p>
+            <div class="admin-bar" id="signal-admin-bar" style="display:none">
+                <button class="btn-admin-action" onclick="document.getElementById('bio-text').focus()">
+                    ✎ EDIT MANIFESTO
+                </button>
             </div>
         </div>
     </section>
 
-    <!-- Instagram Feed Section -->
-    <section id="instagram-feed" class="section instagram-section">
-        <div class="container">
-            <h2 class="section-title">
-                <svg class="instagram-icon" width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/>
-                    <path d="M12 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                </svg>
-                Follow Us on Instagram
-            </h2>
-            
-            <!-- Instagram Handle -->
-            <p class="instagram-handle">
-                <a href="https://instagram.com/beas" target="_blank" rel="noopener">@beas</a>
-            </p>
-            
-            <!-- Instagram Feed Container -->
-            <div id="instagramFeedContainer" class="instagram-feed-grid">
-                <!-- Posts will be loaded here -->
-            </div>
-            
-            <!-- Loading State -->
-            <div id="instagramLoading" class="instagram-loading">
-                <div class="loader"></div>
-                <p>Loading Instagram feed...</p>
-            </div>
-            
-            <!-- Error State -->
-            <div id="instagramError" class="instagram-error" style="display: none;">
-                <p>Unable to load Instagram feed.</p>
-            </div>
-            
-            <!-- CTA Button -->
-            <div class="instagram-cta">
-                <a href="https://instagram.com/beas" target="_blank" rel="noopener" class="btn btn-primary">
-                    Follow on Instagram
-                </a>
-            </div>
-        </div>
-    </section>
+    <!-- ═══ 05 — ACCESS ═══ -->
+    <section id="access" class="site-section">
+        <div class="section-container">
+            <header class="section-header">
+                <div class="section-number mono-label">05</div>
+                <h2 class="section-title">ACCESS</h2>
+                <p class="section-descriptor mono-label">ENTRY POINTS</p>
+                <div class="section-rule" aria-hidden="true"></div>
+            </header>
 
-    <!-- Contact & Newsletter Section -->
-    <section id="contact" class="section contact-section">
-        <div class="container">
-            <div class="contact-grid">
+            <div class="access-grid">
                 <!-- Newsletter -->
-                <div class="newsletter-box">
-                    <h3 class="subsection-title">
-                        <span class="glyph-icon">✉</span>
-                        Join Our Journey
-                    </h3>
-                    <p>Subscribe to receive updates on new releases, tours, and exclusive content.</p>
-                    <form id="newsletter-form" class="form">
-                        <div class="form-group">
-                            <input type="email" id="newsletter-email" class="form-input" placeholder="Your email" required>
+                <div class="access-block">
+                    <div class="access-block-label mono-label">// EMAIL LIST</div>
+                    <h3 class="access-block-title">JOIN THE FREQUENCY</h3>
+                    <p>Receive transmissions directly. New releases, exclusive drops, signal updates.</p>
+                    <form id="newsletter-form" class="access-form">
+                        <div class="access-form-row">
+                            <input type="email" id="newsletter-email" class="sys-input" placeholder="YOUR EMAIL" required>
+                            <button type="submit" class="btn-access-submit">SUBSCRIBE</button>
                         </div>
-                        <button type="submit" class="btn btn-primary">Subscribe</button>
                     </form>
-                    <div id="newsletter-message" class="form-message"></div>
+                    <div id="newsletter-message" class="form-status"></div>
                 </div>
 
-                <!-- Contact Form -->
-                <div class="contact-box">
-                    <h3 class="subsection-title">
-                        <span class="glyph-icon">◈</span>
-                        Get In Touch
-                    </h3>
-                    <form id="contact-form" class="form">
-                        <div class="form-group">
-                            <input type="text" id="contact-name" class="form-input" placeholder="Name" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="email" id="contact-email" class="form-input" placeholder="Email" required>
-                        </div>
-                        <div class="form-group">
-                            <textarea id="contact-message" class="form-textarea" placeholder="Message" rows="5" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Send Message</button>
+                <!-- Contact -->
+                <div class="access-block">
+                    <div class="access-block-label mono-label">// CONTACT</div>
+                    <h3 class="access-block-title">OPEN CHANNEL</h3>
+                    <form id="contact-form" class="access-form">
+                        <input type="text" id="contact-name" class="sys-input" placeholder="NAME" required>
+                        <input type="email" id="contact-email" class="sys-input" placeholder="EMAIL" required>
+                        <textarea id="contact-message" class="sys-textarea" placeholder="MESSAGE" rows="4" required></textarea>
+                        <button type="submit" class="btn-access-submit">TRANSMIT</button>
                     </form>
-                    <div id="contact-message-status" class="form-message"></div>
+                    <div id="contact-message-status" class="form-status"></div>
                 </div>
-            </div>
 
-            <!-- Social Media Links -->
-            <div class="social-links">
-                <h3 class="subsection-title">Connect With Us</h3>
-                <div class="social-icons">
-                    <a href="https://spotify.com" target="_blank" class="social-icon" aria-label="Spotify">
-                        <span class="glyph-icon">♫</span>
-                    </a>
-                    <a href="https://youtube.com" target="_blank" class="social-icon" aria-label="YouTube">
-                        <span class="glyph-icon">▶</span>
-                    </a>
-                    <a href="https://instagram.com" target="_blank" class="social-icon" aria-label="Instagram">
-                        <span class="glyph-icon">◈</span>
-                    </a>
-                    <a href="https://facebook.com" target="_blank" class="social-icon" aria-label="Facebook">
-                        <span class="glyph-icon">◐</span>
-                    </a>
+                <!-- Links -->
+                <div class="access-block">
+                    <div class="access-block-label mono-label">// NODES</div>
+                    <h3 class="access-block-title">EXTERNAL SIGNALS</h3>
+                    <div class="access-links" id="access-links">
+                        <a href="https://instagram.com" target="_blank" rel="noopener" class="access-link">
+                            <span class="access-link-label mono-label">INSTAGRAM</span>
+                            <span class="access-link-arrow">→</span>
+                        </a>
+                        <a href="https://spotify.com" target="_blank" rel="noopener" class="access-link">
+                            <span class="access-link-label mono-label">SPOTIFY</span>
+                            <span class="access-link-arrow">→</span>
+                        </a>
+                        <a href="https://youtube.com" target="_blank" rel="noopener" class="access-link">
+                            <span class="access-link-label mono-label">YOUTUBE</span>
+                            <span class="access-link-arrow">→</span>
+                        </a>
+                        <a href="#" target="_blank" rel="noopener" class="access-link">
+                            <span class="access-link-label mono-label">BANDCAMP</span>
+                            <span class="access-link-arrow">→</span>
+                        </a>
+                    </div>
+                    <div class="admin-bar" id="links-admin-bar" style="display:none">
+                        <button class="btn-admin-action" onclick="showLinksEditor()">✎ EDIT LINKS</button>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2026 BEAS. Powered by ancient energy and modern technology.</p>
-            <p class="glyph-pattern">◈ ☉ ◐ ⬚ ◈</p>
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <span class="mono-label">3EAS — 8Y8.4IK RECORDINGS</span>
+            <span class="mono-label footer-copy">&copy; 2026</span>
+            <span class="mono-label footer-signal">SIGNAL ACTIVE ◉</span>
         </div>
     </footer>
 
-    <!-- Event Modal -->
-    <div id="event-modal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <h3 class="modal-title">Add Event</h3>
-            <form id="event-form" class="form">
-                <div class="form-group">
-                    <label for="event-date">Date</label>
-                    <input type="date" id="event-date" class="form-input" required>
+    <!-- ═══════════════ MODALS ═══════════════ -->
+
+    <!-- Admin Login -->
+    <div id="admin-login-modal" class="sys-modal" role="dialog" aria-labelledby="login-modal-title" aria-modal="true">
+        <div class="sys-modal-content">
+            <button class="sys-modal-close" onclick="authManager.hideLoginModal()" aria-label="Close">✕</button>
+            <div class="modal-sys-label mono-label">// SYSTEM ACCESS</div>
+            <h3 class="modal-title" id="login-modal-title">ADMIN LOGIN</h3>
+            <form id="admin-login-form" class="sys-form" onsubmit="authManager.handleLoginSubmit(event)">
+                <div class="sys-form-group">
+                    <label class="sys-label mono-label" for="admin-username">USERNAME</label>
+                    <input type="text" id="admin-username" class="sys-input" required autocomplete="username">
                 </div>
-                <div class="form-group">
-                    <label for="event-venue">Venue</label>
-                    <input type="text" id="event-venue" class="form-input" required>
+                <div class="sys-form-group">
+                    <label class="sys-label mono-label" for="admin-password">PASSWORD</label>
+                    <input type="password" id="admin-password" class="sys-input" required autocomplete="current-password">
                 </div>
-                <div class="form-group">
-                    <label for="event-location">Location</label>
-                    <input type="text" id="event-location" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label for="event-ticket-link">Ticket Link (optional)</label>
-                    <input type="url" id="event-ticket-link" class="form-input">
-                </div>
-                <button type="submit" class="btn btn-primary">Save Event</button>
+                <div id="login-error" class="form-status form-status--error" style="display:none"></div>
+                <button type="submit" class="btn-sys-primary">AUTHENTICATE</button>
             </form>
+            <div class="modal-hint mono-label">DEFAULT: admin / beas2026</div>
         </div>
     </div>
 
-    <!-- Admin Login Modal -->
-    <div id="admin-login-modal" class="modal">
-        <div class="modal-content admin-modal">
-            <span class="modal-close" onclick="authManager.hideLoginModal()">&times;</span>
-            <h3 class="modal-title">
-                <span class="glyph-icon">◈</span>
-                Admin Login
-            </h3>
-            <p class="admin-subtitle">Enter your credentials to access admin features</p>
-            <form id="admin-login-form" class="form" onsubmit="authManager.handleLoginSubmit(event)">
-                <div class="form-group">
-                    <label for="admin-username">Username</label>
-                    <input type="text" id="admin-username" class="form-input" required autocomplete="username">
-                </div>
-                <div class="form-group">
-                    <label for="admin-password">Password</label>
-                    <input type="password" id="admin-password" class="form-input" required autocomplete="current-password">
-                </div>
-                <div id="login-error" class="form-message error" style="display: none;"></div>
-                <button type="submit" class="btn btn-primary">Login</button>
-            </form>
-            <div class="admin-info">
-                <p class="info-text"><strong>Demo Credentials:</strong></p>
-                <p class="info-text">Username: <code>admin</code></p>
-                <p class="info-text">Password: <code>beas2026</code></p>
+    <!-- Admin Panel (replaces separate user management modal) -->
+    <div id="admin-panel-modal" class="sys-modal sys-modal--wide" role="dialog" aria-labelledby="admin-panel-title" aria-modal="true">
+        <div class="sys-modal-content">
+            <button class="sys-modal-close" onclick="authManager.hideAdminPanel()" aria-label="Close">✕</button>
+            <div class="modal-sys-label mono-label">// ADMIN PANEL</div>
+            <h3 class="modal-title" id="admin-panel-title">SYSTEM CONTROL</h3>
+
+            <!-- Panel Tabs -->
+            <div class="panel-tabs">
+                <button class="panel-tab active" data-panel="menu">MENU</button>
+                <button class="panel-tab" data-panel="users">USERS</button>
             </div>
-        </div>
-    </div>
 
-    <!-- User Management Modal -->
-    <div id="user-management-modal" class="modal">
-        <div class="modal-content user-management-modal">
-            <span class="modal-close" onclick="authManager.hideUserManagementModal()">&times;</span>
-            <h3 class="modal-title">
-                <span class="glyph-icon">◈</span>
-                User Management
-            </h3>
-            <p class="admin-subtitle">Add and manage admin users</p>
-            
-            <!-- Add User Form -->
-            <div class="user-management-section">
-                <h4 class="section-subtitle">Add New User</h4>
-                <form id="add-user-form" class="form" onsubmit="authManager.handleAddUserSubmit(event)">
-                    <div class="form-group">
-                        <label for="new-username">Username</label>
-                        <input type="text" id="new-username" class="form-input" required minlength="3">
+            <!-- Menu Visibility Tab -->
+            <div class="panel-content" id="panel-menu">
+                <div class="panel-section-label mono-label">// SECTION VISIBILITY</div>
+                <p class="panel-desc">Toggle sections on/off. Hidden sections are removed from navigation and page.</p>
+                <div class="menu-toggles" id="menu-toggles">
+                    <div class="menu-toggle-row" data-section="transmissions">
+                        <div class="toggle-info">
+                            <span class="toggle-label">01 — TRANSMISSIONS</span>
+                            <span class="toggle-sub mono-label">All sound output</span>
+                        </div>
+                        <label class="sys-toggle" aria-label="Toggle Transmissions">
+                            <input type="checkbox" class="section-toggle" data-section="transmissions" checked>
+                            <span class="toggle-track"></span>
+                        </label>
                     </div>
-                    <div class="form-group">
-                        <label for="new-password">Password</label>
-                        <input type="password" id="new-password" class="form-input" required minlength="6">
+                    <div class="menu-toggle-row" data-section="visuals">
+                        <div class="toggle-info">
+                            <span class="toggle-label">02 — VISUALS</span>
+                            <span class="toggle-sub mono-label">All visual output</span>
+                        </div>
+                        <label class="sys-toggle" aria-label="Toggle Visuals">
+                            <input type="checkbox" class="section-toggle" data-section="visuals" checked>
+                            <span class="toggle-track"></span>
+                        </label>
                     </div>
-                    <div class="form-group">
-                        <label for="confirm-password">Confirm Password</label>
-                        <input type="password" id="confirm-password" class="form-input" required minlength="6">
+                    <div class="menu-toggle-row" data-section="acquisitions">
+                        <div class="toggle-info">
+                            <span class="toggle-label">03 — ACQUISITIONS</span>
+                            <span class="toggle-sub mono-label">All commerce</span>
+                        </div>
+                        <label class="sys-toggle" aria-label="Toggle Acquisitions">
+                            <input type="checkbox" class="section-toggle" data-section="acquisitions" checked>
+                            <span class="toggle-track"></span>
+                        </label>
                     </div>
-                    <div id="add-user-error" class="form-message error" style="display: none;"></div>
-                    <div id="add-user-success" class="form-message success" style="display: none;"></div>
-                    <button type="submit" class="btn btn-primary">Add User</button>
+                    <div class="menu-toggle-row" data-section="signal">
+                        <div class="toggle-info">
+                            <span class="toggle-label">04 — SIGNAL</span>
+                            <span class="toggle-sub mono-label">Thoughts / writing</span>
+                        </div>
+                        <label class="sys-toggle" aria-label="Toggle Signal">
+                            <input type="checkbox" class="section-toggle" data-section="signal" checked>
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+                    <div class="menu-toggle-row" data-section="access">
+                        <div class="toggle-info">
+                            <span class="toggle-label">05 — ACCESS</span>
+                            <span class="toggle-sub mono-label">Entry points</span>
+                        </div>
+                        <label class="sys-toggle" aria-label="Toggle Access">
+                            <input type="checkbox" class="section-toggle" data-section="access" checked>
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="panel-content" id="panel-users" style="display:none">
+                <div class="panel-section-label mono-label">// ADD USER</div>
+                <form id="add-user-form" class="sys-form" onsubmit="authManager.handleAddUserSubmit(event)">
+                    <div class="sys-form-group">
+                        <label class="sys-label mono-label" for="new-username">USERNAME</label>
+                        <input type="text" id="new-username" class="sys-input" required minlength="3">
+                    </div>
+                    <div class="sys-form-group">
+                        <label class="sys-label mono-label" for="new-password">PASSWORD</label>
+                        <input type="password" id="new-password" class="sys-input" required minlength="6">
+                    </div>
+                    <div class="sys-form-group">
+                        <label class="sys-label mono-label" for="confirm-password">CONFIRM</label>
+                        <input type="password" id="confirm-password" class="sys-input" required minlength="6">
+                    </div>
+                    <div id="add-user-error" class="form-status form-status--error" style="display:none"></div>
+                    <div id="add-user-success" class="form-status form-status--success" style="display:none"></div>
+                    <button type="submit" class="btn-sys-primary">ADD USER</button>
                 </form>
+                <div class="panel-section-label mono-label" style="margin-top:2rem">// EXISTING USERS</div>
+                <div id="user-list" class="user-list"></div>
             </div>
+        </div>
+    </div>
 
-            <!-- User List -->
-            <div class="user-management-section">
-                <h4 class="section-subtitle">Existing Users</h4>
-                <div id="user-list" class="user-list">
-                    <!-- Users will be dynamically populated here -->
+    <!-- Add/Edit Track Modal -->
+    <div id="track-modal" class="sys-modal sys-modal--wide" role="dialog" aria-labelledby="track-modal-title" aria-modal="true">
+        <div class="sys-modal-content">
+            <button class="sys-modal-close" onclick="transmissionsManager.hideTrackModal()" aria-label="Close">✕</button>
+            <div class="modal-sys-label mono-label">// TRANSMISSION CONTROL</div>
+            <h3 class="modal-title" id="track-modal-title">ADD TRANSMISSION</h3>
+            <form id="track-form" class="sys-form" onsubmit="transmissionsManager.handleTrackSubmit(event)">
+                <input type="hidden" id="track-id">
+                <div class="sys-form-row">
+                    <div class="sys-form-group">
+                        <label class="sys-label mono-label" for="track-title-input">TITLE</label>
+                        <input type="text" id="track-title-input" class="sys-input" required placeholder="Track title">
+                    </div>
+                    <div class="sys-form-group">
+                        <label class="sys-label mono-label" for="track-artist">ARTIST</label>
+                        <input type="text" id="track-artist" class="sys-input" placeholder="3EAS">
+                    </div>
+                </div>
+                <div class="sys-form-row">
+                    <div class="sys-form-group">
+                        <label class="sys-label mono-label" for="track-type">TYPE</label>
+                        <select id="track-type" class="sys-select">
+                            <option value="release">RELEASE</option>
+                            <option value="mix">DJ MIX</option>
+                            <option value="exclusive">EXCLUSIVE</option>
+                        </select>
+                    </div>
+                    <div class="sys-form-group">
+                        <label class="sys-label mono-label" for="track-price">PRICE (USD) — 0 for free</label>
+                        <input type="number" id="track-price" class="sys-input" min="0" step="0.01" value="0" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="sys-form-group">
+                    <label class="sys-label mono-label" for="track-purchase-url">PURCHASE URL (Bandcamp / Gumroad / PayPal)</label>
+                    <input type="url" id="track-purchase-url" class="sys-input" placeholder="https://...">
+                </div>
+                <div class="sys-form-row">
+                    <div class="sys-form-group">
+                        <label class="sys-label mono-label" for="track-album">ALBUM / RELEASE</label>
+                        <input type="text" id="track-album" class="sys-input" placeholder="Album name (optional)">
+                    </div>
+                    <div class="sys-form-group">
+                        <label class="sys-label mono-label" for="track-release-date">RELEASE DATE</label>
+                        <input type="date" id="track-release-date" class="sys-input">
+                    </div>
+                </div>
+                <div class="sys-form-group">
+                    <label class="sys-label mono-label">AUDIO FILE (MP3)</label>
+                    <div class="file-upload-zone" id="track-audio-zone">
+                        <input type="file" id="track-audio-file" accept="audio/mp3,audio/mpeg" hidden>
+                        <label for="track-audio-file" class="file-upload-label">
+                            <span class="mono-label" id="track-audio-filename">CHOOSE MP3 FILE</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="sys-form-group">
+                    <label class="sys-label mono-label">ARTWORK (optional)</label>
+                    <div class="file-upload-zone" id="track-artwork-zone">
+                        <input type="file" id="track-artwork-file" accept="image/jpeg,image/png,image/webp" hidden>
+                        <label for="track-artwork-file" class="file-upload-label">
+                            <span class="mono-label" id="track-artwork-filename">CHOOSE IMAGE FILE</span>
+                        </label>
+                        <img id="track-artwork-preview" class="artwork-preview" src="" alt="" style="display:none">
+                    </div>
+                </div>
+                <div class="sys-form-group">
+                    <label class="sys-label mono-label">
+                        <input type="checkbox" id="track-paywalled" class="sys-checkbox">
+                        PAYWALLED (requires purchase to access full track)
+                    </label>
+                </div>
+                <div class="sys-form-group" id="track-unlock-group" style="display:none">
+                    <label class="sys-label mono-label" for="track-unlock-code">ACCESS CODE (for exclusive content)</label>
+                    <input type="text" id="track-unlock-code" class="sys-input" placeholder="Secret code">
+                </div>
+                <div id="track-form-error" class="form-status form-status--error" style="display:none"></div>
+                <div class="sys-form-actions">
+                    <button type="submit" class="btn-sys-primary">SAVE TRANSMISSION</button>
+                    <button type="button" class="btn-sys-secondary" onclick="transmissionsManager.hideTrackModal()">CANCEL</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div id="purchase-modal" class="sys-modal" role="dialog" aria-labelledby="purchase-modal-title" aria-modal="true">
+        <div class="sys-modal-content">
+            <button class="sys-modal-close" onclick="transmissionsManager.hidePurchaseModal()" aria-label="Close">✕</button>
+            <div class="modal-sys-label mono-label">// ACQUISITION</div>
+            <h3 class="modal-title" id="purchase-modal-title">ACQUIRE TRANSMISSION</h3>
+            <div class="purchase-track-info" id="purchase-track-info">
+                <div class="purchase-artwork" id="purchase-artwork"></div>
+                <div class="purchase-details">
+                    <div class="purchase-track-title" id="purchase-track-title">—</div>
+                    <div class="purchase-track-artist mono-label" id="purchase-track-artist">—</div>
+                    <div class="purchase-price" id="purchase-price">$0.00</div>
                 </div>
             </div>
+            <div class="purchase-options" id="purchase-options">
+                <a id="purchase-external-link" href="#" target="_blank" rel="noopener" class="btn-sys-primary btn-purchase-main">
+                    ACQUIRE NOW →
+                </a>
+                <div class="purchase-divider mono-label">— OR CONTACT —</div>
+                <a id="purchase-email-link" href="mailto:contact@3eas.com" class="btn-sys-secondary">
+                    REQUEST VIA EMAIL
+                </a>
+            </div>
+            <div class="purchase-note mono-label">
+                After payment, you will receive a download link via email within 24 hours.
+            </div>
+            <!-- Unlock Code (for exclusive) -->
+            <div id="purchase-unlock-section" style="display:none">
+                <div class="purchase-divider mono-label">— OR ENTER ACCESS CODE —</div>
+                <div class="sys-form-row">
+                    <input type="text" id="purchase-unlock-input" class="sys-input" placeholder="ACCESS CODE">
+                    <button class="btn-sys-secondary" onclick="transmissionsManager.attemptUnlock()">UNLOCK</button>
+                </div>
+                <div id="purchase-unlock-error" class="form-status form-status--error" style="display:none"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Image Lightbox Modal -->
-    <div id="imageLightbox" class="lightbox-modal" style="display: none;">
-        <span class="lightbox-close-gallery">&times;</span>
-        <button class="lightbox-prev">&#10094;</button>
-        <button class="lightbox-next">&#10095;</button>
-        <img id="lightboxImage" class="lightbox-image" src="" alt="">
-        <div class="lightbox-info">
-            <p id="lightboxFilename"></p>
-            <p id="lightboxDate"></p>
+    <!-- Image Lightbox -->
+    <div id="imageLightbox" class="lightbox-overlay" role="dialog" aria-modal="true" style="display:none">
+        <button class="lightbox-close" id="lightbox-close-btn" aria-label="Close">✕</button>
+        <button class="lightbox-arrow lightbox-prev" id="lb-prev" aria-label="Previous">‹</button>
+        <button class="lightbox-arrow lightbox-next" id="lb-next" aria-label="Next">›</button>
+        <img id="lightboxImage" class="lightbox-img" src="" alt="">
+        <div class="lightbox-caption mono-label">
+            <span id="lightboxFilename"></span>
+            <span id="lightboxDate"></span>
         </div>
     </div>
 
-    <!-- Lightbox -->
-    <div id="lightbox" class="lightbox">
-        <span class="lightbox-close">&times;</span>
-        <img id="lightbox-img" class="lightbox-content" alt="Gallery image">
-    </div>
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-    <!-- Scripts -->
+    <!-- ═══ SCRIPTS ═══ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    
+
     <script src="js/storage.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/webgl-scene.js"></script>
-    <script src="js/audio-player.js"></script>
-    <script src="js/media-upload.js"></script>
+    <script src="js/transmissions.js"></script>
+    <script src="js/gallery.js"></script>
     <script src="js/events.js"></script>
     <script src="js/instagram-config.js"></script>
     <script src="js/instagram-feed.js"></script>
-    <script src="js/gallery.js"></script>
-    
-    <!-- Email Configuration and Contact Form Handler -->
     <script src="js/email-config.js"></script>
     <script src="js/contact-form.js"></script>
-    
     <script src="js/main.js"></script>
 </body>
 </html>
