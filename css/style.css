@@ -303,14 +303,40 @@ img { display: block; max-width: 100%; }
    ========================================================================== */
 .hero-section {
     position: relative;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    height: 100vh;
     overflow: hidden;
     z-index: 2;
-    padding-top: var(--nav-h);
+}
+
+.hero-parallax-bg {
+    position: absolute;
+    top: -30%;
+    left: 0;
+    right: 0;
+    bottom: -30%;
+    will-change: transform;
+    pointer-events: none;
+}
+
+.hero-parallax-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(to bottom,
+        rgba(0,0,0,0.25) 0%,
+        rgba(0,0,0,0) 25%,
+        rgba(0,0,0,0) 60%,
+        rgba(0,0,0,0.9) 100%
+    );
 }
 
 /* Technical grid elements */

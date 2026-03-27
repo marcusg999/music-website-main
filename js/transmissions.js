@@ -1,20 +1,21 @@
 /**
  * TransmissionsManager
  * Manages the audio catalog — releases, mixes, exclusive content.
- * Handles track CRUD, preview playback, filtering, and purchase flow.
+ * Handles track CRUD, preview playback, filtering, and Stripe purchase flow.
  */
 
 class TransmissionsManager {
     constructor() {
-        this.tracks = [];
+        this.tracks        = [];
         this.currentFilter = 'all';
-        this.currentTrackId = null;
-        this.isPlaying = false;
-        this.audio = new Audio();
-        this.audioContext = null;
-        this.analyser = null;
-        this.animFrame = null;
-        this.purchaseTrackId = null;
+        this.currentTrackId= null;
+        this.isPlaying     = false;
+        this.audio         = new Audio();
+        this.audioContext  = null;
+        this.analyser      = null;
+        this.animFrame     = null;
+        this.purchaseTrackId  = null;
+        this.downloadTrackId  = null;
 
         this._loadTracks();
         this._bindAudio();
@@ -53,14 +54,39 @@ class TransmissionsManager {
     }
 
     /* ═══════════════════════════════════════════
-       AUDIO BLOBS (IndexedDB via storage.js)
+       PURCHASE STATE
+    ═══════════════════════════════════════════ */
+
+    isPurchased(trackId) {
+        return window.stripeCheckout ? stripeCheckout.isPurchased(trackId) : false;
+    }
+
+    /**
+     * Called by stripe-checkout.js after a successful Stripe return.
+     * Validates the unlock code and returns success/failure.
+     */
+    processStripeReturn(trackId, code) {
+        const track = this.tracks.find(t => t.id === trackId);
+        if (!track) return { success: false, reason: 'track_not_found' };
+
+        // If no unlock code set on track, trust Stripe redirect (less secure)
+        if (!track.unlockCode) return { success: true, track };
+
+        // Validate code
+        if (track.unlockCode === code) return { success: true, track };
+
+        return { success: false, reason: 'invalid_code' };
+    }
+
+    /* ═══════════════════════════════════════════
+       AUDIO BLOBS (IndexedDB)
     ═══════════════════════════════════════════ */
 
     async _saveAudioBlob(id, file) {
         if (window.storage) {
             try {
                 const result = await storage.saveAudioFile(file);
-                return result; // returns the auto-increment db id
+                return result; // auto-increment db id
             } catch (e) {
                 console.warn('Could not store audio in IndexedDB', e);
             }
@@ -69,10 +95,8 @@ class TransmissionsManager {
     }
 
     async _getAudioURL(track) {
-        // If inline blobURL cached on track object, use it
         if (track._blobURL) return track._blobURL;
 
-        // Try IndexedDB by stored db id
         if (window.storage && track.audioDbId) {
             try {
                 const files = await storage.getAllAudioFiles();
@@ -86,7 +110,6 @@ class TransmissionsManager {
             }
         }
 
-        // Fallback: externalAudioUrl set by admin
         return track.externalAudioUrl || null;
     }
 
@@ -94,7 +117,7 @@ class TransmissionsManager {
         if (window.storage) {
             try {
                 const imageData = {
-                    id: id,
+                    id,
                     filename: file.name,
                     blob: file,
                     uploadDate: new Date().toISOString(),
@@ -113,7 +136,7 @@ class TransmissionsManager {
         if (window.storage && track.artworkStorageKey) {
             try {
                 const images = await storage.getAllImages();
-                const match = images.find(i => i.id === track.artworkStorageKey);
+                const match  = images.find(i => i.id === track.artworkStorageKey);
                 if (match && match.blob) {
                     track._artworkURL = URL.createObjectURL(match.blob);
                     return track._artworkURL;
@@ -131,7 +154,7 @@ class TransmissionsManager {
 
     async renderCatalog() {
         const catalog = document.getElementById('transmission-catalog');
-        const empty = document.getElementById('catalog-empty');
+        const empty   = document.getElementById('catalog-empty');
         if (!catalog) return;
 
         let filtered = this.tracks;
@@ -148,14 +171,14 @@ class TransmissionsManager {
         if (empty) empty.style.display = 'none';
 
         const isAdmin = window.authManager && authManager.isAdmin();
-        const rows = await Promise.all(filtered.map((track, i) => this._buildTrackRow(track, i + 1, isAdmin)));
+        const rows    = await Promise.all(
+            filtered.map((track, i) => this._buildTrackRow(track, i + 1, isAdmin))
+        );
         catalog.innerHTML = rows.join('');
 
-        // Attach row listeners
         catalog.querySelectorAll('.track-row').forEach(row => {
             const id = row.dataset.id;
-            row.addEventListener('click', (e) => {
-                // Don't play if a button was clicked
+            row.addEventListener('click', e => {
                 if (e.target.closest('button') || e.target.closest('a')) return;
                 this.playTrack(id);
             });
@@ -163,34 +186,56 @@ class TransmissionsManager {
     }
 
     async _buildTrackRow(track, index, isAdmin) {
-        const artworkURL = await this._getArtworkURL(track);
-        const artworkHTML = artworkURL
+        const artworkURL    = await this._getArtworkURL(track);
+        const artworkHTML   = artworkURL
             ? `<img src="${artworkURL}" alt="${this._esc(track.title)}" loading="lazy">`
             : `<span class="track-artwork-placeholder">ART</span>`;
 
-        const priceLabel = track.price > 0
-            ? `$${parseFloat(track.price).toFixed(2)}`
-            : 'FREE';
+        const isFree      = !track.price || parseFloat(track.price) === 0;
+        const priceLabel  = isFree ? 'FREE' : `$${parseFloat(track.price).toFixed(2)}`;
+        const purchased   = this.isPurchased(track.id);
+        const isPlaying   = this.currentTrackId === track.id && this.isPlaying;
 
-        const isPlaying = this.currentTrackId === track.id && this.isPlaying;
-
-        // Action buttons
+        /* ── Action buttons ── */
         let actionBtn = '';
-        if (track.isPaywalled && !isAdmin) {
-            actionBtn = `<button class="btn-locked" onclick="transmissionsManager.showPurchaseModal('${track.id}')">⬡ ${priceLabel}</button>`;
-        } else if (track.price > 0 && !track.isPaywalled) {
-            actionBtn = `<button class="btn-acquire" onclick="transmissionsManager.showPurchaseModal('${track.id}')">ACQUIRE ${priceLabel}</button>`;
+        let purchasedBadge = '';
+
+        if (purchased) {
+            purchasedBadge = `<span class="track-purchased-badge mono-label">PURCHASED ✓</span>`;
+            actionBtn = `
+                <button class="btn-download-row" onclick="transmissionsManager.showDownloadModal('${track.id}')">
+                    ↓ DOWNLOAD
+                </button>`;
+        } else if (track.isPaywalled) {
+            actionBtn = `
+                <button class="btn-locked" onclick="transmissionsManager.showPurchaseModal('${track.id}')">
+                    ⬡ ${priceLabel}
+                </button>`;
+        } else if (!isFree) {
+            actionBtn = `
+                <button class="btn-acquire" onclick="transmissionsManager.showPurchaseModal('${track.id}')">
+                    ACQUIRE ${priceLabel}
+                </button>`;
         } else {
-            actionBtn = `<button class="btn-acquire btn-free" onclick="transmissionsManager.playTrack('${track.id}')">▶ PLAY</button>`;
+            actionBtn = `
+                <button class="btn-acquire btn-free" onclick="transmissionsManager.playTrack('${track.id}')">
+                    ▶ PLAY
+                </button>`;
         }
 
+        /* ── Preview button (paid but not paywalled) ── */
+        const previewBtn = (!isFree && !track.isPaywalled && !purchased)
+            ? `<button class="btn-preview" onclick="transmissionsManager.previewTrack('${track.id}')">PREVIEW</button>`
+            : '';
+
+        /* ── Admin buttons ── */
         const adminBtns = isAdmin ? `
-            <button class="btn-track-edit" onclick="transmissionsManager.showEditTrackModal('${track.id}')">EDIT</button>
+            <button class="btn-track-edit"   onclick="transmissionsManager.showEditTrackModal('${track.id}')">EDIT</button>
             <button class="btn-track-delete" onclick="transmissionsManager.deleteTrack('${track.id}')">DEL</button>
         ` : '';
 
         return `
-        <div class="track-row${isPlaying ? ' playing' : ''}" data-id="${track.id}" data-type="${track.type}">
+        <div class="track-row${isPlaying ? ' playing' : ''}${purchased ? ' purchased' : ''}" data-id="${track.id}" data-type="${track.type}">
             <div class="track-num">${String(index).padStart(2, '0')}</div>
             <div class="track-play-icon">${isPlaying ? '◼' : '▶'}</div>
             <div class="track-artwork">${artworkHTML}</div>
@@ -200,12 +245,13 @@ class TransmissionsManager {
                     <span class="track-artist-text">${this._esc(track.artist || '3EAS')}</span>
                     <span class="track-type-badge${track.type === 'exclusive' ? ' badge-exclusive' : ''}">${track.type.toUpperCase()}</span>
                     ${track.album ? `<span class="track-artist-text">— ${this._esc(track.album)}</span>` : ''}
+                    ${purchasedBadge}
                 </div>
             </div>
             <div class="track-duration mono-label">${track.duration ? this._formatDuration(track.duration) : '—:——'}</div>
-            <div class="track-price-tag">${priceLabel}</div>
+            <div class="track-price-tag">${purchased ? '✓' : priceLabel}</div>
             <div class="track-actions">
-                ${track.price > 0 && !track.isPaywalled ? `<button class="btn-preview" onclick="transmissionsManager.previewTrack('${track.id}')">PREVIEW</button>` : ''}
+                ${previewBtn}
                 ${actionBtn}
                 ${adminBtns}
             </div>
@@ -220,8 +266,10 @@ class TransmissionsManager {
         const track = this.tracks.find(t => t.id === id);
         if (!track) return;
 
-        // Paywalled: require purchase unless admin
-        if (track.isPaywalled && !(window.authManager && authManager.isAdmin())) {
+        const isFree    = !track.price || parseFloat(track.price) === 0;
+        const purchased = this.isPurchased(id);
+
+        if (track.isPaywalled && !purchased && !(window.authManager && authManager.isAdmin())) {
             this.showPurchaseModal(id);
             return;
         }
@@ -246,7 +294,7 @@ class TransmissionsManager {
         try {
             await this.audio.play();
             this.currentTrackId = id;
-            this.isPlaying = true;
+            this.isPlaying      = true;
             this._updateNowPlayingUI(track);
             this._initVisualizer();
             this.renderCatalog();
@@ -260,15 +308,14 @@ class TransmissionsManager {
         const track = this.tracks.find(t => t.id === id);
         if (!track) return;
         await this.playTrack(id);
-        // Auto-stop after previewDuration seconds
         const previewSecs = track.previewDuration || 30;
-        const startTime = this.audio.currentTime;
-        const checkPreview = setInterval(() => {
+        const startTime   = this.audio.currentTime;
+        const check = setInterval(() => {
             if (this.audio.currentTime >= startTime + previewSecs) {
                 this.audio.pause();
                 this.isPlaying = false;
                 this.renderCatalog();
-                clearInterval(checkPreview);
+                clearInterval(check);
             }
         }, 500);
     }
@@ -287,11 +334,11 @@ class TransmissionsManager {
     }
 
     _bindAudio() {
-        const playBtn = document.getElementById('np-play');
-        const prevBtn = document.getElementById('np-prev');
-        const nextBtn = document.getElementById('np-next');
-        const scrubber = document.getElementById('np-scrubber');
-        const volumeInput = document.getElementById('np-volume');
+        const playBtn    = document.getElementById('np-play');
+        const prevBtn    = document.getElementById('np-prev');
+        const nextBtn    = document.getElementById('np-next');
+        const scrubber   = document.getElementById('np-scrubber');
+        const volumeInput= document.getElementById('np-volume');
 
         if (playBtn) {
             playBtn.addEventListener('click', () => {
@@ -309,29 +356,23 @@ class TransmissionsManager {
             });
         }
 
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => this._skipTrack(-1));
-        }
-
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => this._skipTrack(1));
-        }
+        if (prevBtn) prevBtn.addEventListener('click', () => this._skipTrack(-1));
+        if (nextBtn) nextBtn.addEventListener('click', () => this._skipTrack(1));
 
         this.audio.addEventListener('timeupdate', () => {
             const current = document.getElementById('np-current');
-            const fill = document.getElementById('np-progress-fill');
-            const slider = document.getElementById('np-scrubber');
+            const fill    = document.getElementById('np-progress-fill');
+            const slider  = document.getElementById('np-scrubber');
             if (!this.audio.duration) return;
             const pct = (this.audio.currentTime / this.audio.duration) * 100;
             if (current) current.textContent = this._formatDuration(this.audio.currentTime);
-            if (fill) fill.style.width = pct + '%';
-            if (slider) slider.value = pct;
+            if (fill)    fill.style.width    = pct + '%';
+            if (slider)  slider.value        = pct;
         });
 
         this.audio.addEventListener('loadedmetadata', () => {
             const dur = document.getElementById('np-duration');
             if (dur) dur.textContent = this._formatDuration(this.audio.duration);
-            // Update stored duration on current track
             if (this.currentTrackId) {
                 const track = this.tracks.find(t => t.id === this.currentTrackId);
                 if (track && !track.duration) {
@@ -366,7 +407,7 @@ class TransmissionsManager {
         const list = this.currentFilter === 'all'
             ? this.tracks
             : this.tracks.filter(t => t.type === this.currentFilter);
-        const idx = list.findIndex(t => t.id === this.currentTrackId);
+        const idx  = list.findIndex(t => t.id === this.currentTrackId);
         if (idx === -1) return;
         const next = list[idx + dir];
         if (next) this.playTrack(next.id);
@@ -388,24 +429,20 @@ class TransmissionsManager {
                 this.analyser.fftSize = 64;
                 source.connect(this.analyser);
                 this.analyser.connect(this.audioContext.destination);
-            } catch (e) {
-                return;
-            }
+            } catch (e) { return; }
         }
 
-        const ctx = canvas.getContext('2d');
-        const bufferLen = this.analyser.frequencyBinCount;
-        const dataArr = new Uint8Array(bufferLen);
+        const ctx      = canvas.getContext('2d');
+        const bufLen   = this.analyser.frequencyBinCount;
+        const dataArr  = new Uint8Array(bufLen);
 
         const draw = () => {
             this.animFrame = requestAnimationFrame(draw);
             this.analyser.getByteFrequencyData(dataArr);
-
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const barW = canvas.width / bufferLen;
-
-            for (let i = 0; i < bufferLen; i++) {
-                const h = (dataArr[i] / 255) * canvas.height;
+            const barW = canvas.width / bufLen;
+            for (let i = 0; i < bufLen; i++) {
+                const h     = (dataArr[i] / 255) * canvas.height;
                 const alpha = 0.3 + (dataArr[i] / 255) * 0.7;
                 ctx.fillStyle = `rgba(255,255,255,${alpha})`;
                 ctx.fillRect(i * barW, canvas.height - h, barW - 1, h);
@@ -433,22 +470,25 @@ class TransmissionsManager {
     }
 
     /* ═══════════════════════════════════════════
-       ADMIN: ADD/EDIT TRACK MODAL
+       ADMIN: ADD / EDIT TRACK MODAL
     ═══════════════════════════════════════════ */
 
     showAddTrackModal() {
         const modal = document.getElementById('track-modal');
-        const form = document.getElementById('track-form');
+        const form  = document.getElementById('track-form');
         const title = document.getElementById('track-modal-title');
         if (!modal) return;
 
         form.reset();
-        document.getElementById('track-id').value = '';
-        document.getElementById('track-artist').value = '3EAS';
-        document.getElementById('track-audio-filename').textContent = 'CHOOSE MP3 FILE';
+        document.getElementById('track-id').value              = '';
+        document.getElementById('track-artist').value          = '3EAS';
+        document.getElementById('track-audio-filename').textContent   = 'CHOOSE MP3 FILE';
         document.getElementById('track-artwork-filename').textContent = 'CHOOSE IMAGE FILE';
         const preview = document.getElementById('track-artwork-preview');
         if (preview) { preview.src = ''; preview.style.display = 'none'; }
+
+        const stripePanel = document.getElementById('stripe-setup-panel');
+        if (stripePanel) stripePanel.style.display = 'none';
 
         if (title) title.textContent = 'ADD TRANSMISSION';
         modal.classList.add('active');
@@ -462,25 +502,29 @@ class TransmissionsManager {
         const title = document.getElementById('track-modal-title');
         if (!modal) return;
 
-        document.getElementById('track-id').value = track.id;
-        document.getElementById('track-title-input').value = track.title || '';
-        document.getElementById('track-artist').value = track.artist || '3EAS';
-        document.getElementById('track-type').value = track.type || 'release';
-        document.getElementById('track-price').value = track.price || 0;
-        document.getElementById('track-purchase-url').value = track.purchaseUrl || '';
-        document.getElementById('track-album').value = track.album || '';
-        document.getElementById('track-release-date').value = track.releaseDate || '';
-        document.getElementById('track-paywalled').checked = !!track.isPaywalled;
-        document.getElementById('track-unlock-code').value = track.unlockCode || '';
+        document.getElementById('track-id').value             = track.id;
+        document.getElementById('track-title-input').value    = track.title     || '';
+        document.getElementById('track-artist').value         = track.artist    || '3EAS';
+        document.getElementById('track-type').value           = track.type      || 'release';
+        document.getElementById('track-price').value          = track.price     || 0;
+        document.getElementById('track-purchase-url').value   = track.purchaseUrl   || '';
+        document.getElementById('track-download-url').value   = track.downloadUrl   || '';
+        document.getElementById('track-album').value          = track.album     || '';
+        document.getElementById('track-release-date').value   = track.releaseDate   || '';
+        document.getElementById('track-paywalled').checked    = !!track.isPaywalled;
+        document.getElementById('track-unlock-code').value    = track.unlockCode    || '';
 
         const audioLabel = document.getElementById('track-audio-filename');
-        if (audioLabel) audioLabel.textContent = track.audioStorageKey || 'CHOOSE MP3 FILE';
+        if (audioLabel) audioLabel.textContent = track.audioDbId ? '✓ AUDIO ON FILE' : 'CHOOSE MP3 FILE';
 
         const unlockGroup = document.getElementById('track-unlock-group');
         if (unlockGroup) unlockGroup.style.display = track.isPaywalled ? 'flex' : 'none';
 
         if (title) title.textContent = 'EDIT TRANSMISSION';
         modal.classList.add('active');
+
+        // Show Stripe setup panel if track has ID + code
+        updateStripeSetupPanel && updateStripeSetupPanel();
     }
 
     hideTrackModal() {
@@ -489,15 +533,14 @@ class TransmissionsManager {
     }
 
     _bindTrackForm() {
-        const audioInput = document.getElementById('track-audio-file');
+        const audioInput   = document.getElementById('track-audio-file');
         const artworkInput = document.getElementById('track-artwork-file');
+        const unlockInput  = document.getElementById('track-unlock-code');
 
         if (audioInput) {
             audioInput.addEventListener('change', () => {
                 const file = audioInput.files[0];
-                if (file) {
-                    document.getElementById('track-audio-filename').textContent = file.name;
-                }
+                if (file) document.getElementById('track-audio-filename').textContent = file.name;
             });
         }
 
@@ -507,18 +550,22 @@ class TransmissionsManager {
                 if (file) {
                     document.getElementById('track-artwork-filename').textContent = file.name;
                     const preview = document.getElementById('track-artwork-preview');
-                    if (preview) {
-                        preview.src = URL.createObjectURL(file);
-                        preview.style.display = 'block';
-                    }
+                    if (preview) { preview.src = URL.createObjectURL(file); preview.style.display = 'block'; }
                 }
+            });
+        }
+
+        // Update Stripe setup panel whenever unlock code changes
+        if (unlockInput) {
+            unlockInput.addEventListener('input', () => {
+                if (typeof updateStripeSetupPanel === 'function') updateStripeSetupPanel();
             });
         }
     }
 
     _bindPaywalledToggle() {
         const checkbox = document.getElementById('track-paywalled');
-        const group = document.getElementById('track-unlock-group');
+        const group    = document.getElementById('track-unlock-group');
         if (checkbox && group) {
             checkbox.addEventListener('change', () => {
                 group.style.display = checkbox.checked ? 'flex' : 'none';
@@ -532,38 +579,39 @@ class TransmissionsManager {
         const errorEl = document.getElementById('track-form-error');
         if (errorEl) errorEl.style.display = 'none';
 
-        const id = document.getElementById('track-id').value || this._generateId();
-        const titleVal = document.getElementById('track-title-input').value.trim();
-        const artist = document.getElementById('track-artist').value.trim() || '3EAS';
-        const type = document.getElementById('track-type').value;
-        const price = parseFloat(document.getElementById('track-price').value) || 0;
+        const id          = document.getElementById('track-id').value || this._generateId();
+        const titleVal    = document.getElementById('track-title-input').value.trim();
+        const artist      = document.getElementById('track-artist').value.trim()    || '3EAS';
+        const type        = document.getElementById('track-type').value;
+        const price       = parseFloat(document.getElementById('track-price').value) || 0;
         const purchaseUrl = document.getElementById('track-purchase-url').value.trim();
-        const album = document.getElementById('track-album').value.trim();
+        const downloadUrl = document.getElementById('track-download-url').value.trim();
+        const album       = document.getElementById('track-album').value.trim();
         const releaseDate = document.getElementById('track-release-date').value;
         const isPaywalled = document.getElementById('track-paywalled').checked;
-        const unlockCode = document.getElementById('track-unlock-code').value.trim();
+        const unlockCode  = document.getElementById('track-unlock-code').value.trim();
 
         if (!titleVal) {
             if (errorEl) { errorEl.textContent = 'Title is required.'; errorEl.style.display = 'block'; }
             return;
         }
 
-        const audioFile = document.getElementById('track-audio-file').files[0];
+        const audioFile   = document.getElementById('track-audio-file').files[0];
         const artworkFile = document.getElementById('track-artwork-file').files[0];
 
-        // Build/update track object
         const existing = this.tracks.find(t => t.id === id);
-        const track = existing || { id, uploadDate: new Date().toISOString() };
+        const track    = existing || { id, uploadDate: new Date().toISOString() };
 
-        track.title = titleVal;
-        track.artist = artist;
-        track.type = type;
-        track.price = price;
+        track.title       = titleVal;
+        track.artist      = artist;
+        track.type        = type;
+        track.price       = price;
         track.purchaseUrl = purchaseUrl;
-        track.album = album;
+        track.downloadUrl = downloadUrl;
+        track.album       = album;
         track.releaseDate = releaseDate;
         track.isPaywalled = isPaywalled;
-        track.unlockCode = unlockCode;
+        track.unlockCode  = unlockCode;
         track.previewDuration = 30;
 
         // Handle audio file
@@ -573,7 +621,6 @@ class TransmissionsManager {
                 return;
             }
             track._blobURL = URL.createObjectURL(audioFile);
-            // Persist to IndexedDB, store returned db id for reload lookup
             const namedBlob = new File([audioFile], id + '_audio', { type: audioFile.type });
             const dbId = await this._saveAudioBlob(id + '_audio', namedBlob);
             if (dbId) track.audioDbId = dbId;
@@ -588,9 +635,7 @@ class TransmissionsManager {
             await this._saveArtworkBlob(id + '_artwork', namedBlob);
         }
 
-        if (!existing) {
-            this.tracks.push(track);
-        }
+        if (!existing) this.tracks.push(track);
 
         this._saveTracks();
         this.hideTrackModal();
@@ -604,7 +649,7 @@ class TransmissionsManager {
         if (this.currentTrackId === id) {
             this.audio.pause();
             this.currentTrackId = null;
-            this.isPlaying = false;
+            this.isPlaying      = false;
             this._updateNowPlayingUI(null);
         }
         this._saveTracks();
@@ -613,7 +658,7 @@ class TransmissionsManager {
     }
 
     /* ═══════════════════════════════════════════
-       ADMIN: QUICK UPLOAD (from admin bar)
+       ADMIN: QUICK UPLOAD
     ═══════════════════════════════════════════ */
 
     _bindAdminUpload() {
@@ -626,18 +671,17 @@ class TransmissionsManager {
                 if (!file.type.match(/audio\/(mp3|mpeg)/)) continue;
                 if (file.size > 100 * 1024 * 1024) continue;
 
-                const id = this._generateId();
-                const titleName = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').toUpperCase();
+                const id       = this._generateId();
+                const titleName= file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').toUpperCase();
                 const track = {
                     id,
                     title: titleName,
                     artist: '3EAS',
-                    type: 'release',
+                    type:  'release',
                     price: 0,
-                    isPaywalled: false,
-                    uploadDate: new Date().toISOString(),
+                    isPaywalled:     false,
+                    uploadDate:      new Date().toISOString(),
                     previewDuration: 30,
-                    audioStorageKey: id + '_audio',
                     _blobURL: URL.createObjectURL(file),
                 };
 
@@ -655,54 +699,69 @@ class TransmissionsManager {
     }
 
     /* ═══════════════════════════════════════════
-       PURCHASE MODAL
+       PURCHASE MODAL (Stripe flow)
     ═══════════════════════════════════════════ */
 
     async showPurchaseModal(id) {
         const track = this.tracks.find(t => t.id === id);
         if (!track) return;
 
+        // Already purchased — go straight to download
+        if (this.isPurchased(id)) {
+            this.showDownloadModal(id);
+            return;
+        }
+
         this.purchaseTrackId = id;
 
         const modal = document.getElementById('purchase-modal');
         if (!modal) return;
 
-        // Populate track info
+        // Title
         document.getElementById('purchase-modal-title').textContent =
             track.isPaywalled ? '⬡ RESTRICTED TRANSMISSION' : 'ACQUIRE TRANSMISSION';
-        document.getElementById('purchase-track-title').textContent = track.title.toUpperCase();
+
+        // Track info
+        document.getElementById('purchase-track-title').textContent  = track.title.toUpperCase();
         document.getElementById('purchase-track-artist').textContent = (track.artist || '3EAS').toUpperCase();
-        document.getElementById('purchase-price').textContent =
-            track.price > 0 ? `$${parseFloat(track.price).toFixed(2)} USD` : 'FREE';
+
+        const priceText = track.price > 0 ? `$${parseFloat(track.price).toFixed(2)} USD` : 'FREE';
+        document.getElementById('purchase-price').textContent = priceText;
 
         // Artwork
-        const artEl = document.getElementById('purchase-artwork');
+        const artEl  = document.getElementById('purchase-artwork');
         const artURL = await this._getArtworkURL(track);
         artEl.innerHTML = artURL
             ? `<img src="${artURL}" alt="${this._esc(track.title)}">`
             : '';
 
-        // Purchase link
-        const externalLink = document.getElementById('purchase-external-link');
-        const emailLink = document.getElementById('purchase-email-link');
-        const purchaseOptions = document.getElementById('purchase-options');
+        // ── Stripe pay button ──
+        const stripeBtn   = document.getElementById('stripe-pay-btn');
+        const emailLink   = document.getElementById('purchase-email-link');
+        const purchaseOpts= document.getElementById('purchase-options');
         const unlockSection = document.getElementById('purchase-unlock-section');
 
-        if (track.purchaseUrl) {
-            externalLink.href = track.purchaseUrl;
-            externalLink.style.display = 'block';
-        } else {
-            externalLink.style.display = 'none';
+        if (stripeBtn) {
+            if (track.purchaseUrl) {
+                stripeBtn.href        = track.purchaseUrl;
+                stripeBtn.textContent = `PAY ${priceText} WITH STRIPE →`;
+                stripeBtn.style.display = 'block';
+            } else {
+                stripeBtn.style.display = 'none';
+            }
         }
 
-        emailLink.href = `mailto:contact@3eas.com?subject=Purchase Request: ${encodeURIComponent(track.title)}&body=I'd like to purchase "${track.title}" for $${parseFloat(track.price || 0).toFixed(2)}.`;
+        if (emailLink) {
+            emailLink.href = `mailto:contact@3eas.com?subject=Purchase Request: ${encodeURIComponent(track.title)}&body=I'd like to purchase "${track.title}" for ${priceText}.`;
+        }
 
-        if (track.isPaywalled && track.unlockCode) {
-            unlockSection.style.display = 'block';
-            purchaseOptions.style.display = track.purchaseUrl ? 'flex' : 'none';
-        } else {
-            unlockSection.style.display = 'none';
-            purchaseOptions.style.display = 'flex';
+        if (purchaseOpts) {
+            purchaseOpts.style.display = track.purchaseUrl ? 'flex' : 'flex';
+        }
+
+        // Unlock code section (if paywalled + no Stripe URL, show code entry)
+        if (unlockSection) {
+            unlockSection.style.display = track.isPaywalled ? 'block' : 'none';
         }
 
         const unlockError = document.getElementById('purchase-unlock-error');
@@ -719,23 +778,81 @@ class TransmissionsManager {
         this.purchaseTrackId = null;
     }
 
-    async attemptUnlock() {
+    attemptUnlock() {
         const track = this.tracks.find(t => t.id === this.purchaseTrackId);
         if (!track) return;
 
-        const input = document.getElementById('purchase-unlock-input');
+        const input   = document.getElementById('purchase-unlock-input');
         const errorEl = document.getElementById('purchase-unlock-error');
-        const code = input ? input.value.trim() : '';
+        const code    = input ? input.value.trim() : '';
 
         if (!code) return;
 
         if (code === track.unlockCode) {
+            // Record as purchased
+            window.stripeCheckout && stripeCheckout.recordPurchase(track.id, code);
             this.hidePurchaseModal();
-            await this.playTrack(track.id);
-            this._showToast('Access granted. Playing transmission.', 'success');
+            this.showDownloadModal(track.id);
+            this.renderCatalog();
         } else {
             if (errorEl) { errorEl.textContent = 'Invalid access code.'; errorEl.style.display = 'block'; }
         }
+    }
+
+    /* ═══════════════════════════════════════════
+       DOWNLOAD MODAL
+    ═══════════════════════════════════════════ */
+
+    async showDownloadModal(trackId) {
+        const track = this.tracks.find(t => t.id === trackId);
+        if (!track) return;
+
+        this.downloadTrackId = trackId;
+
+        const modal = document.getElementById('download-modal');
+        if (!modal) return;
+
+        // Track info
+        document.getElementById('dl-track-title').textContent  = track.title.toUpperCase();
+        document.getElementById('dl-track-artist').textContent = (track.artist || '3EAS').toUpperCase();
+
+        // Artwork
+        const artEl  = document.getElementById('dl-artwork');
+        const artURL = await this._getArtworkURL(track);
+        artEl.innerHTML = artURL
+            ? `<img src="${artURL}" alt="${this._esc(track.title)}">`
+            : '';
+
+        // Download button
+        const dlBtn = document.getElementById('download-mp3-btn');
+        if (dlBtn) {
+            if (track.downloadUrl) {
+                dlBtn.href    = track.downloadUrl;
+                dlBtn.setAttribute('download', track.title + '.mp3');
+                dlBtn.style.display = 'block';
+            } else if (track._blobURL) {
+                dlBtn.href    = track._blobURL;
+                dlBtn.setAttribute('download', track.title + '.mp3');
+                dlBtn.style.display = 'block';
+            } else {
+                dlBtn.style.display = 'none';
+            }
+        }
+
+        modal.classList.add('active');
+    }
+
+    hideDownloadModal() {
+        const modal = document.getElementById('download-modal');
+        if (modal) modal.classList.remove('active');
+        this.downloadTrackId = null;
+    }
+
+    playPurchasedTrack() {
+        if (!this.downloadTrackId) return;
+        this.hideDownloadModal();
+        this.playTrack(this.downloadTrackId);
+        scrollToSection('transmissions');
     }
 
     /* ═══════════════════════════════════════════
@@ -753,6 +870,18 @@ class TransmissionsManager {
                 if (target) target.style.display = 'block';
             });
         });
+    }
+
+    /* ═══════════════════════════════════════════
+       AUTH CALLBACK
+    ═══════════════════════════════════════════ */
+
+    onAuthChange() {
+        const adminBar = document.getElementById('transmission-admin-bar');
+        if (adminBar) {
+            adminBar.style.display = (window.authManager && authManager.isAdmin()) ? 'flex' : 'none';
+        }
+        this.renderCatalog();
     }
 
     /* ═══════════════════════════════════════════
@@ -776,27 +905,12 @@ class TransmissionsManager {
     }
 
     _showToast(message, type = 'success') {
-        if (window.showToast) {
-            window.showToast(message, type);
-        } else {
-            console.log(`[${type}] ${message}`);
-        }
-    }
-
-    /* Called by auth.js after login/logout to refresh UI */
-    onAuthChange() {
-        const adminBar = document.getElementById('transmission-admin-bar');
-        if (adminBar) {
-            adminBar.style.display = (window.authManager && authManager.isAdmin()) ? 'flex' : 'none';
-        }
-        this.renderCatalog();
+        window.showToast ? showToast(message, type) : console.log(`[${type}] ${message}`);
     }
 }
 
-/* Instantiate globally */
 const transmissionsManager = new TransmissionsManager();
 
-/* Init catalog after DOM ready */
 document.addEventListener('DOMContentLoaded', () => {
     transmissionsManager.renderCatalog();
 });
